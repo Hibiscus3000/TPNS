@@ -63,7 +63,7 @@ public class DataReader {
             if (selection.isEmpty()) {
                 selections.remove(selection);
             } else {
-                selection.setNumberOfNoDataEntries(entryInd);
+                selection.setNoDataEntries(entryInd - firstDataRowInd);
             }
         }
         return selections;

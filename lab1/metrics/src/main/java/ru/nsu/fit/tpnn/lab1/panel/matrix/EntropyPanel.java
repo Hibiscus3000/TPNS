@@ -18,10 +18,16 @@ public class EntropyPanel extends JPanel {
 
         int matrixSize = selections.size();
         for (int i = 0; i < matrixSize; ++i) {
-            matrixPanel.add(new JLabel(selections.get(i).getValueName()), new GBC(i + 1, 0));
+            JLabel label = new JLabel(selections.get(i).getValueName());
+            label.setPreferredSize(MatrixPanel.getPreferredLabelSize());
+            matrixPanel.add(label, new GBC(i + 1, 0));
         }
-        matrixPanel.add(new JLabel("name"), new GBC(0, 0));
-        matrixPanel.add(new JLabel("entropy"), new GBC(0, 1));
+        JLabel nameLabel = new JLabel("name");
+        nameLabel.setPreferredSize(MatrixPanel.getPreferredLabelSize());
+        matrixPanel.add(nameLabel, new GBC(0, 0));
+        JLabel entropyLabel = new JLabel("entropy");
+        entropyLabel.setPreferredSize(MatrixPanel.getPreferredLabelSize());
+        matrixPanel.add(entropyLabel, new GBC(0, 1));
 
 
         for (int i = 0; i < matrixSize; ++i) {
@@ -30,6 +36,7 @@ public class EntropyPanel extends JPanel {
         }
 
         add(new JLabel("Entropy"));
-        add(matrixPanel);
+        add(new JScrollPane(matrixPanel));
+        setPreferredSize(MatrixPanel.getPreferredPanelSize());
     }
 }

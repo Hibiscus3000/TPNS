@@ -5,24 +5,21 @@ import java.awt.*;
 public class GBC extends GridBagConstraints {
 
     public GBC(int gridX, int gridY) {
-        this(gridX, gridY, 1, 1, BOTH, 5);
+        this(gridX, gridY, 1, 1);
     }
 
-    public GBC(int gridX, int gridY, int fill) {
-        this(gridX, gridY, 1, 1, fill, 5);
+    public GBC(int gridX, int gridY, int gridWidth, int gridHeight) {
+        this(gridX, gridY, gridWidth, gridHeight, 100, 100);
     }
 
-    public GBC(int gridX, int gridY, int gridWidth, int gridHeight, int fill, int inset) {
+    public GBC(int gridX, int gridY, int gridWidth, int gridHeight, int weightX, int weightY) {
         gridx = gridX;
         gridy = gridY;
         gridwidth = gridWidth;
         gridheight = gridHeight;
-        insets = new Insets(inset, inset, inset, inset);
-        this.fill = fill;
-        if (BOTH != fill) {
-            anchor = WEST;
-        }
-        weightx = 100;
-        weighty = 100;
+        fill = BOTH;
+        anchor = CENTER;
+        weightx = weightX;
+        weighty = weightY;
     }
 }

@@ -12,7 +12,9 @@ import static javax.swing.ScrollPaneConstants.*;
 
 public class MatrixPanel extends JPanel {
 
-    private static final Dimension preferredLabelDimension = new Dimension(200, 100);
+    private static final Dimension preferredLabelSize = new Dimension(350, 30);
+    private static final Dimension preferredPanelSize = new Dimension(600, 400);
+    ;
 
     public MatrixPanel(List<Selection> selections, List<Selection> targets,
                        BigDecimal[][] matrix,
@@ -29,8 +31,8 @@ public class MatrixPanel extends JPanel {
         int numberOfColumns = matrix[0].length;
         for (int i = 0; i < numberOfColumns; ++i) {
             JLabel label = new JLabel(selections.get(i).getValueName());
-            label.setPreferredSize(preferredLabelDimension);
-            horizontalLabelPanel.add(label, new GBC(i, 0, GridBagConstraints.BOTH));
+            label.setPreferredSize(preferredLabelSize);
+            horizontalLabelPanel.add(label, new GBC(i, 0));
         }
 
         JPanel verticalLabelPanel = new JPanel();
@@ -38,8 +40,8 @@ public class MatrixPanel extends JPanel {
         int numberOfRows = matrix.length;
         for (int i = 0; i < numberOfRows; ++i) {
             JLabel label = new JLabel(targets.get(i).getValueName());
-            label.setPreferredSize(preferredLabelDimension);
-            verticalLabelPanel.add(label, new GBC(0, i, GridBagConstraints.VERTICAL));
+            label.setPreferredSize(preferredLabelSize);
+            verticalLabelPanel.add(label, new GBC(0, i));
         }
 
         JPanel matrixPanel = new JPanel();
@@ -47,17 +49,17 @@ public class MatrixPanel extends JPanel {
         for (int i = 0; i < numberOfColumns; ++i) {
             for (int j = 0; j < numberOfRows; ++j) {
                 JLabel label = new JLabel(String.valueOf(matrix[j][i]));
-                label.setPreferredSize(preferredLabelDimension);
-                matrixPanel.add(label, new GBC(j, i, GridBagConstraints.BOTH));
+                label.setPreferredSize(preferredLabelSize);
+                matrixPanel.add(label, new GBC(i, j));
             }
         }
 
         JScrollPane horizontalLabelPane = new JScrollPane(horizontalLabelPanel, VERTICAL_SCROLLBAR_NEVER,
                 HORIZONTAL_SCROLLBAR_NEVER);
         JScrollPane verticalLabelPane = new JScrollPane(verticalLabelPanel, VERTICAL_SCROLLBAR_NEVER,
-                HORIZONTAL_SCROLLBAR_NEVER);
-        JScrollPane matrixPane = new JScrollPane(matrixPanel, VERTICAL_SCROLLBAR_AS_NEEDED,
-                HORIZONTAL_SCROLLBAR_AS_NEEDED);
+                HORIZONTAL_SCROLLBAR_ALWAYS);
+        JScrollPane matrixPane = new JScrollPane(matrixPanel, VERTICAL_SCROLLBAR_ALWAYS,
+                HORIZONTAL_SCROLLBAR_ALWAYS);
         matrixPane.getHorizontalScrollBar().addAdjustmentListener(e ->
                 horizontalLabelPane.getHorizontalScrollBar()
                         .setValue(matrixPane.getHorizontalScrollBar().getValue()));
@@ -65,24 +67,27 @@ public class MatrixPanel extends JPanel {
                 verticalLabelPane.getVerticalScrollBar()
                         .setValue(matrixPane.getVerticalScrollBar().getValue()));
 
-        //verticalLabelPane.setMaximumSize(new Dimension(100, 600));
-        //verticalLabelPanel.setMaximumSize(new Dimension(100, 600));
-        //verticalLabelPane.setPreferredSize(new Dimension(100, 600));
-        //verticalLabelPanel.setPreferredSize(new Dimension(100, 600));
-
         add(new JLabel(metricName));
 
         JPanel gridBagPanel = new JPanel();
         gridBagPanel.setLayout(new GridBagLayout());
         gridBagPanel.add(horizontalLabelPane, new GBC(1, 0, selections.size(), 1,
-                GridBagConstraints.BOTH, 3));
+                100, 20));
         gridBagPanel.add(matrixPane, new GBC(1, 1, selections.size(), targets.size(),
-                GridBagConstraints.BOTH, 3));
+                100, 100));
         gridBagPanel.add(verticalLabelPane, new GBC(0, 1, 1, targets.size(),
-                GridBagConstraints.VERTICAL, 3));
-        //verticalLabelPane.revalidate();
-        //gridBagPanel.revalidate();
+                20, 100));
 
         add(gridBagPanel);
+
+        setPreferredSize(preferredPanelSize);
+    }
+
+    public static Dimension getPreferredPanelSize() {
+        return preferredPanelSize;
+    }
+
+    public static Dimension getPreferredLabelSize() {
+        return preferredLabelSize;
     }
 }

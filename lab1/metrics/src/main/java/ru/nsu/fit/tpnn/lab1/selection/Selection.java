@@ -3,9 +3,7 @@ package ru.nsu.fit.tpnn.lab1.selection;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 import static ru.nsu.fit.tpnn.lab1.selection.Value.roundingMode;
 import static ru.nsu.fit.tpnn.lab1.selection.Value.scale;
@@ -23,7 +21,7 @@ public class Selection {
     private BigDecimal entropy;
     private static final MathContext mathContext = new MathContext(7, RoundingMode.HALF_EVEN);
 
-    private int numberOfNoDataEntries;
+    private final List<Integer> noValueEntries = new ArrayList<>();
 
     public Selection(String valueName, String unitName) {
         this.valueName = valueName;
@@ -38,10 +36,18 @@ public class Selection {
     public void setNextValue(int id, BigDecimal value) {
         values.put(id, new Value(value));
         if (null == min || 0 > value.compareTo(min)) {
-            min = value;
+            min = value.setScale(scale, roundingMode);
         }
         if (null == max || 0 < value.compareTo(max)) {
-            max = value;
+            max = value.setScale(scale, roundingMode);
+        }
+    }
+
+    public void setNoDataEntries(int rowsTotal) {
+        for (int i = 0; i < rowsTotal; ++i) {
+            if (null == values.get(i)) {
+                noValueEntries.add(i);
+            }
         }
     }
 
@@ -77,17 +83,26 @@ public class Selection {
         if (null == entropy) {
             splitIntervals();
             entropy = new BigDecimal(0, mathContext).setScale(scale, roundingMode);
+            int numberOfValues = values.size();
+            int numberOfNoValuesEntries = noValueEntries.size();
             for (Map.Entry<Integer, Interval> intervalEntry : intervals.entrySet().stream().toList()) {
                 BigDecimal frequency = new BigDecimal(intervalEntry.getValue().getNumberOfValues())
-                        .divide(new BigDecimal(values.size()), mathContext).setScale(scale, roundingMode);
+                        .divide(new BigDecimal(numberOfValues + numberOfNoValuesEntries),
+                                mathContext).setScale(scale, roundingMode);
                 if (!frequency.equals(BigDecimal.valueOf(0).setScale(scale, roundingMode))) {
-                    entropy = entropy.subtract(frequency.multiply(log2(frequency), mathContext));
+                    entropy = entropy.subtract(frequency.multiply(log2(frequency), mathContext))
+                            .setScale(scale, roundingMode);
                 }
             }
+            if (0 < numberOfNoValuesEntries) {
+                BigDecimal noDataFrequency = BigDecimal.valueOf(numberOfNoValuesEntries)
+                        .divide(BigDecimal.valueOf(numberOfValues + numberOfNoValuesEntries),
+                                mathContext).setScale(scale, roundingMode);
+                entropy = entropy.subtract(log2(noDataFrequency).multiply(noDataFrequency, mathContext))
+                        .setScale(scale, roundingMode);
+            }
         }
-        BigDecimal noDataFrequency = BigDecimal.valueOf(numberOfNoDataEntries)
-                .divide(BigDecimal.valueOf(values.size()), mathContext).setScale(scale, roundingMode);
-        return entropy.subtract(log2(noDataFrequency).multiply(noDataFrequency, mathContext));
+        return entropy;
     }
 
     private void splitIntervals() { //Sturgess rule
@@ -113,29 +128,35 @@ public class Selection {
         BigDecimal normalizedConditionalEntropy = new BigDecimal(0, mathContext)
                 .setScale(scale, roundingMode);
         for (Map.Entry<Integer, Interval> intervalEntry : onWhichDepend.intervals.entrySet().stream().toList()) {
-            int numberOfValuesTotal = 0;
-            int numberOfIntervals = intervals.size();
-            int[] frequencies = new int[numberOfIntervals + 1]; //frequencies[intervals.size()] - no data frequency
-            for (Integer valueId : intervalEntry.getValue().getValuesIds()) {
-                Value value = values.get(valueId);
-                if (null != value) {
-                    ++frequencies[value.getIntervalId()];
-                } else {
-                    ++frequencies[numberOfIntervals];
-                }
-                ++numberOfValuesTotal;
+            normalizedConditionalEntropy = countInterval(intervalEntry.getValue().getValuesIds(),
+                    normalizedConditionalEntropy);
+        }
+        return countInterval(noValueEntries, normalizedConditionalEntropy);
+    }
+
+    private BigDecimal countInterval(List<Integer> valueIds, BigDecimal normalizedConditionalEntropy) {
+        int numberOfValuesTotal = 0;
+        int numberOfIntervals = intervals.size();
+        int[] appearances = new int[numberOfIntervals + 1]; //frequencies[intervals.size()] - no data frequency
+        for (Integer valueId : valueIds) {
+            Value value = values.get(valueId);
+            if (null != value) {
+                ++appearances[value.getIntervalId()];
+            } else {
+                ++appearances[numberOfIntervals];
             }
-            for (int frequency : frequencies) {
-                if (0 == frequency) {
-                    continue;
-                }
-                normalizedConditionalEntropy = normalizedConditionalEntropy
-                        .subtract(BigDecimal
-                                .valueOf(log2(((double) frequency) / numberOfValuesTotal))
-                                .multiply(BigDecimal
-                                        .valueOf(((double) frequency) / onWhichDepend.values.size())))
-                        .setScale(scale, roundingMode);
+            ++numberOfValuesTotal;
+        }
+        for (int appearance : appearances) {
+            if (0 == appearance) {
+                continue;
             }
+            normalizedConditionalEntropy = normalizedConditionalEntropy
+                    .subtract(BigDecimal
+                            .valueOf(log2(((double) appearance) / numberOfValuesTotal))
+                            .multiply(BigDecimal
+                                    .valueOf(((double) appearance) / (values.size() + noValueEntries.size())))
+                            .setScale(scale, roundingMode));
         }
         return normalizedConditionalEntropy;
     }
@@ -147,8 +168,7 @@ public class Selection {
 
     public BigDecimal getGainRatio(Selection onWhichDepend) {
         return getInfoGain(onWhichDepend)
-                .divide(onWhichDepend.getEntropy()
-                        .multiply(BigDecimal.valueOf(-1)), mathContext)
+                .divide(onWhichDepend.getEntropy(), mathContext)
                 .setScale(scale, roundingMode);
     }
 
@@ -192,10 +212,6 @@ public class Selection {
 
     private BigDecimal log2(BigDecimal value) {
         return BigDecimal.valueOf(Math.log10(value.doubleValue()) / Math.log10(2)).setScale(scale, roundingMode);
-    }
-
-    public void setNumberOfNoDataEntries(int numberOfEntries) {
-        numberOfNoDataEntries = numberOfEntries - values.size();
     }
 
     @Override

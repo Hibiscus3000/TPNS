@@ -32,8 +32,8 @@ public class MetricsFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screenSize = toolkit.getScreenSize();
-        setPreferredSize(new Dimension((int) (3 * screenSize.getWidth() / 4),
-                (int) (screenSize.getHeight() / 2)));
+        setPreferredSize(new Dimension((int) (9 * screenSize.getWidth() / 10),
+                (int) (9 * screenSize.getHeight() / 10)));
 
         fileChooser.setCurrentDirectory(new File(".."));
         fileChooser.setMultiSelectionEnabled(false);
@@ -63,6 +63,9 @@ public class MetricsFrame extends JFrame {
                                     lastColumnIndex - 1);
                     if (null != featurePanel) {
                         remove(featurePanel);
+                    }
+                    if (null != matricesPanelScrollPane) {
+                        remove(matricesPanelScrollPane);
                     }
                     add(featurePanel = new FeaturePanel(selections), BorderLayout.CENTER);
                     revalidate();
@@ -95,12 +98,13 @@ public class MetricsFrame extends JFrame {
             MatrixPanel correlationPanel = new MatrixPanel(selections, selections,
                     getCorrelations(), "Correlation");
             MatrixPanel gainRatioPanel = new MatrixPanel(selections, featurePanel.getTargets(),
-                    featurePanel.getGainRatios(), "GainRatio");
-            //matricesPanel.add(entropyPanel);
+                    featurePanel.getGainRatios(), "Gain Ratio");
+            matricesPanel.add(entropyPanel);
             matricesPanel.add(correlationPanel);
-            //matricesPanel.add(gainRatioPanel);
+            matricesPanel.add(gainRatioPanel);
 
-            add(matricesPanel);
+            matricesPanelScrollPane = new JScrollPane(matricesPanel);
+            add(matricesPanelScrollPane);
             revalidate();
         });
         findButtonPanel.add(findButton);

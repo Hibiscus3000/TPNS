@@ -14,6 +14,8 @@ public class FeaturePanel extends JPanel {
     private final List<Selection> selections;
     private final List<Selection> targets = new ArrayList<>();
 
+    private static final Dimension preferredLabelAndCheckboxSize = new Dimension(350, 50);
+
     public FeaturePanel(List<Selection> selections) {
         super();
         this.selections = selections;
@@ -37,6 +39,7 @@ public class FeaturePanel extends JPanel {
                     targets.remove(selection);
                 }
             });
+            deleteCheckBox.setPreferredSize(preferredLabelAndCheckboxSize);
             deleteCheckBox.addActionListener(e -> {
                 if (deleteCheckBox.isSelected()) {
                     selections.remove(selection);
@@ -48,10 +51,12 @@ public class FeaturePanel extends JPanel {
                     }
                 }
             });
+            deleteCheckBox.setPreferredSize(preferredLabelAndCheckboxSize);
             featuresSelectionPanel.add(deleteCheckBox, new GBC(x, 0));
             featuresSelectionPanel.add(targetCheckBox, new GBC(x, 1));
-            featuresSelectionPanel.add(new JLabel(selection.getValueName()),
-                    new GBC(x, 2));
+            JLabel nameLabel = new JLabel(selection.getValueName());
+            nameLabel.setPreferredSize(preferredLabelAndCheckboxSize);
+            featuresSelectionPanel.add(nameLabel, new GBC(x, 2));
             ++x;
         }
 
