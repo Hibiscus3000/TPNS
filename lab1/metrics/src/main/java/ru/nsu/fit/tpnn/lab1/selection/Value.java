@@ -7,7 +7,7 @@ import static java.math.RoundingMode.HALF_EVEN;
 
 public class Value {
 
-    public static final int scale = 2;
+    public static final int scale = 8;
     public static final RoundingMode roundingMode = HALF_EVEN;
 
     private final BigDecimal value;

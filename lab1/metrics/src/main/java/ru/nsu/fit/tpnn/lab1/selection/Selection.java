@@ -19,7 +19,7 @@ public class Selection {
     private BigDecimal max;
 
     private BigDecimal entropy;
-    private static final MathContext mathContext = new MathContext(7, RoundingMode.HALF_EVEN);
+    private static final MathContext mathContext = new MathContext(10, RoundingMode.HALF_EVEN);
 
     private final List<Integer> noValueEntries = new ArrayList<>();
 
@@ -74,7 +74,6 @@ public class Selection {
                 sampleVariance =
                         sampleVariance.add(valueEntry.getValue().getValue().subtract(sampleMean).pow(2));
             }
-            sampleVariance = sampleVariance.divide(BigDecimal.valueOf(values.size()), mathContext);
         }
         return sampleVariance;
     }
@@ -173,26 +172,24 @@ public class Selection {
     }
 
     public BigDecimal getCorrelation(Selection other) {
-        Selection productSelection = new Selection(String.format("product(%s,%s)", valueName,
-                other.valueName), String.format("(%s,%s)", unitName, other.unitName));
-        int id = 0;
+        BigDecimal covariance = BigDecimal.valueOf(0).setScale(scale, roundingMode);
         for (Map.Entry<Integer, Value> thisValueEntry : values.entrySet().stream().toList()) {
-            Value value = other.values.get(thisValueEntry.getKey());
-            if (null != value) {
-                productSelection.setNextValue(id++,
-                        thisValueEntry.getValue().getValue()
-                                .multiply(value.getValue()));
+            Value otherValue = other.values.get(thisValueEntry.getKey());
+            if (null != otherValue) {
+                Value thisValue = thisValueEntry.getValue();
+                covariance = covariance.add(thisValue.getValue()
+                                .subtract(getSampleMean(), mathContext)
+                                .multiply(otherValue.getValue()
+                                        .subtract(other.getSampleMean(), mathContext), mathContext))
+                        .setScale(scale, roundingMode);
             }
         }
 
-        BigDecimal productSampleMean = getSampleMean().multiply(other.getSampleMean(), mathContext)
+        BigDecimal variancesProductSqrt = getSampleVariance().multiply(other.getSampleVariance(),
+                        mathContext).setScale(scale, roundingMode).sqrt(mathContext)
                 .setScale(scale, roundingMode);
-        BigDecimal covariance = productSelection.getSampleMean().subtract(productSampleMean, mathContext)
-                .setScale(scale, roundingMode);
-        BigDecimal variancesProduct = getSampleVariance().multiply(other.getSampleVariance(),
-                mathContext).setScale(scale, roundingMode).sqrt(mathContext);
         try {
-            return covariance.divide(variancesProduct, mathContext).setScale(scale, roundingMode);
+            return covariance.divide(variancesProductSqrt, mathContext).setScale(scale, roundingMode);
         } catch (ArithmeticException arithmeticException) {
             return BigDecimal.valueOf(0);
         }
