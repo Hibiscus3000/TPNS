@@ -7,6 +7,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static ru.nsu.fit.tpnn.lab1.selection.Value.roundingMode;
+import static ru.nsu.fit.tpnn.lab1.selection.Value.scale;
+
 public class Selection {
 
     private final String valueName;
@@ -46,7 +49,7 @@ public class Selection {
 
     public BigDecimal getSampleMean() {
         if (null == sampleMean) {
-            sampleMean = new BigDecimal(0, mathContext);
+            sampleMean = new BigDecimal(0, mathContext).setScale(2, roundingMode);
             for (Map.Entry<Integer, Value> value : values.entrySet().stream().toList()) {
                 sampleMean = sampleMean.add(value.getValue().getValue());
             }
@@ -59,7 +62,7 @@ public class Selection {
 
     public BigDecimal getSampleVariance() {
         if (null == sampleVariance) {
-            sampleVariance = new BigDecimal(0, mathContext);
+            sampleVariance = new BigDecimal(0, mathContext).setScale(scale, roundingMode);
             BigDecimal sampleMean = getSampleMean();
             for (Map.Entry<Integer, Value> valueEntry : values.entrySet().stream().toList()) {
                 sampleVariance =
@@ -73,24 +76,25 @@ public class Selection {
     public BigDecimal getEntropy() {
         if (null == entropy) {
             splitIntervals();
-            entropy = new BigDecimal(0, mathContext);
+            entropy = new BigDecimal(0, mathContext).setScale(scale, roundingMode);
             for (Map.Entry<Integer, Interval> intervalEntry : intervals.entrySet().stream().toList()) {
                 BigDecimal frequency = new BigDecimal(intervalEntry.getValue().getNumberOfValues())
-                        .divide(new BigDecimal(values.size()), mathContext);
-                if (!frequency.equals(BigDecimal.valueOf(0))) {
+                        .divide(new BigDecimal(values.size()), mathContext).setScale(scale, roundingMode);
+                if (!frequency.equals(BigDecimal.valueOf(0).setScale(scale, roundingMode))) {
                     entropy = entropy.subtract(frequency.multiply(log2(frequency), mathContext));
                 }
             }
         }
         BigDecimal noDataFrequency = BigDecimal.valueOf(numberOfNoDataEntries)
-                .divide(BigDecimal.valueOf(values.size()), mathContext);
+                .divide(BigDecimal.valueOf(values.size()), mathContext).setScale(scale, roundingMode);
         return entropy.subtract(log2(noDataFrequency).multiply(noDataFrequency, mathContext));
     }
 
     private void splitIntervals() { //Sturgess rule
         int numberOfIntervals = (int) Math.ceil(log2(values.size()));
-        BigDecimal delta = max.subtract(min).divide(BigDecimal.valueOf(numberOfIntervals), mathContext);
-        BigDecimal leftBorder = new BigDecimal(min.doubleValue(), mathContext);
+        BigDecimal delta = max.subtract(min).divide(BigDecimal.valueOf(numberOfIntervals), mathContext)
+                .setScale(scale, roundingMode);
+        BigDecimal leftBorder = new BigDecimal(min.doubleValue(), mathContext).setScale(scale, roundingMode);
         for (int i = 0; i < numberOfIntervals; ++i) {
             BigDecimal rightBorder = leftBorder.add(delta);
             Interval interval = new Interval(i, leftBorder, rightBorder, i == numberOfIntervals - 1);
@@ -106,7 +110,8 @@ public class Selection {
     }
 
     private BigDecimal getNormalizedConditionalEntropy(Selection onWhichDepend) {
-        BigDecimal normalizedConditionalEntropy = new BigDecimal(0, mathContext);
+        BigDecimal normalizedConditionalEntropy = new BigDecimal(0, mathContext)
+                .setScale(scale, roundingMode);
         for (Map.Entry<Integer, Interval> intervalEntry : onWhichDepend.intervals.entrySet().stream().toList()) {
             int numberOfValuesTotal = 0;
             int numberOfIntervals = intervals.size();
@@ -128,20 +133,23 @@ public class Selection {
                         .subtract(BigDecimal
                                 .valueOf(log2(((double) frequency) / numberOfValuesTotal))
                                 .multiply(BigDecimal
-                                        .valueOf(((double) frequency) / onWhichDepend.values.size())));
+                                        .valueOf(((double) frequency) / onWhichDepend.values.size())))
+                        .setScale(scale, roundingMode);
             }
         }
         return normalizedConditionalEntropy;
     }
 
     private BigDecimal getInfoGain(Selection onWhichDepend) {
-        return getEntropy().subtract(getNormalizedConditionalEntropy(onWhichDepend));
+        return getEntropy().subtract(getNormalizedConditionalEntropy(onWhichDepend))
+                .setScale(scale, roundingMode);
     }
 
     public BigDecimal getGainRatio(Selection onWhichDepend) {
         return getInfoGain(onWhichDepend)
                 .divide(onWhichDepend.getEntropy()
-                        .multiply(BigDecimal.valueOf(-1)), mathContext);
+                        .multiply(BigDecimal.valueOf(-1)), mathContext)
+                .setScale(scale, roundingMode);
     }
 
     public BigDecimal getCorrelation(Selection other) {
@@ -157,13 +165,14 @@ public class Selection {
             }
         }
 
-        BigDecimal productSampleMean = getSampleMean().multiply(other.getSampleMean(), mathContext);
-        BigDecimal covariance = productSelection.getSampleMean().subtract(productSampleMean, mathContext);
+        BigDecimal productSampleMean = getSampleMean().multiply(other.getSampleMean(), mathContext)
+                .setScale(scale, roundingMode);
+        BigDecimal covariance = productSelection.getSampleMean().subtract(productSampleMean, mathContext)
+                .setScale(scale, roundingMode);
         BigDecimal variancesProduct = getSampleVariance().multiply(other.getSampleVariance(),
-                        mathContext)
-                .sqrt(mathContext);
+                mathContext).setScale(scale, roundingMode).sqrt(mathContext);
         try {
-            return covariance.divide(variancesProduct, mathContext);
+            return covariance.divide(variancesProduct, mathContext).setScale(scale, roundingMode);
         } catch (ArithmeticException arithmeticException) {
             return BigDecimal.valueOf(0);
         }
@@ -182,7 +191,7 @@ public class Selection {
     }
 
     private BigDecimal log2(BigDecimal value) {
-        return BigDecimal.valueOf(Math.log10(value.doubleValue()) / Math.log10(2));
+        return BigDecimal.valueOf(Math.log10(value.doubleValue()) / Math.log10(2)).setScale(scale, roundingMode);
     }
 
     public void setNumberOfNoDataEntries(int numberOfEntries) {
