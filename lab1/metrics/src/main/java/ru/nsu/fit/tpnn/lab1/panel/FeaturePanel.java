@@ -68,11 +68,11 @@ public class FeaturePanel extends JPanel {
         add(boxPanel);
     }
 
-    public BigDecimal[][] getGainRatios() {
+    public BigDecimal[][] getGainRatios(boolean withNoData) {
         BigDecimal[][] gainRatios = new BigDecimal[targets.size()][selections.size()];
         for (int j = 0; j < targets.size(); ++j) {
             for (int i = 0; i < selections.size(); ++i) {
-                gainRatios[j][i] = targets.get(j).getGainRatio(selections.get(i));
+                gainRatios[j][i] = targets.get(j).getGainRatio(selections.get(i), withNoData);
             }
         }
         return gainRatios;

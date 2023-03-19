@@ -94,13 +94,19 @@ public class MetricsFrame extends JFrame {
             JPanel matricesPanel = new JPanel();
             matricesPanel.setLayout(new BoxLayout(matricesPanel, BoxLayout.Y_AXIS));
 
-            EntropyPanel entropyPanel = new EntropyPanel(selections);
+            EntropyPanel entropyNoDataPanel = new EntropyPanel(selections, true);
+            EntropyPanel entropyPanel = new EntropyPanel(selections, false);
             MatrixPanel correlationPanel = new MatrixPanel(selections, selections,
                     getCorrelations(), "Correlation");
+            MatrixPanel gainRatioNoDataPanel = new MatrixPanel(selections, featurePanel.getTargets(),
+                    featurePanel.getGainRatios(true),
+                    "Gain Ratio counting no data entries");
             MatrixPanel gainRatioPanel = new MatrixPanel(selections, featurePanel.getTargets(),
-                    featurePanel.getGainRatios(), "Gain Ratio");
+                    featurePanel.getGainRatios(false), "Gain Ratio");
+            matricesPanel.add(entropyNoDataPanel);
             matricesPanel.add(entropyPanel);
             matricesPanel.add(correlationPanel);
+            matricesPanel.add(gainRatioNoDataPanel);
             matricesPanel.add(gainRatioPanel);
 
             matricesPanelScrollPane = new JScrollPane(matricesPanel);

@@ -18,7 +18,6 @@ public class Selection {
     private BigDecimal min;
     private BigDecimal max;
 
-    private BigDecimal entropy;
     private static final MathContext mathContext = new MathContext(10, RoundingMode.HALF_EVEN);
 
     private final List<Integer> noValueEntries = new ArrayList<>();
@@ -78,28 +77,26 @@ public class Selection {
         return sampleVariance;
     }
 
-    public BigDecimal getEntropy() {
-        if (null == entropy) {
-            splitIntervals();
-            entropy = new BigDecimal(0, mathContext).setScale(scale, roundingMode);
-            int numberOfValues = values.size();
-            int numberOfNoValuesEntries = noValueEntries.size();
-            for (Map.Entry<Integer, Interval> intervalEntry : intervals.entrySet().stream().toList()) {
-                BigDecimal frequency = new BigDecimal(intervalEntry.getValue().getNumberOfValues())
-                        .divide(new BigDecimal(numberOfValues + numberOfNoValuesEntries),
-                                mathContext).setScale(scale, roundingMode);
-                if (!frequency.equals(BigDecimal.valueOf(0).setScale(scale, roundingMode))) {
-                    entropy = entropy.subtract(frequency.multiply(log2(frequency), mathContext))
-                            .setScale(scale, roundingMode);
-                }
-            }
-            if (0 < numberOfNoValuesEntries) {
-                BigDecimal noDataFrequency = BigDecimal.valueOf(numberOfNoValuesEntries)
-                        .divide(BigDecimal.valueOf(numberOfValues + numberOfNoValuesEntries),
-                                mathContext).setScale(scale, roundingMode);
-                entropy = entropy.subtract(log2(noDataFrequency).multiply(noDataFrequency, mathContext))
+    public BigDecimal getEntropy(boolean withNoData) {
+        splitIntervals();
+        BigDecimal entropy = new BigDecimal(0, mathContext).setScale(scale, roundingMode);
+        int numberOfValues = values.size();
+        int numberOfNoValuesEntries = noValueEntries.size();
+        for (Map.Entry<Integer, Interval> intervalEntry : intervals.entrySet().stream().toList()) {
+            BigDecimal frequency = new BigDecimal(intervalEntry.getValue().getNumberOfValues())
+                    .divide(new BigDecimal(numberOfValues + (withNoData ? numberOfNoValuesEntries : 0)),
+                            mathContext).setScale(scale, roundingMode);
+            if (!frequency.equals(BigDecimal.valueOf(0).setScale(scale, roundingMode))) {
+                entropy = entropy.subtract(frequency.multiply(log2(frequency), mathContext))
                         .setScale(scale, roundingMode);
             }
+        }
+        if (withNoData && 0 < numberOfNoValuesEntries) {
+            BigDecimal noDataFrequency = BigDecimal.valueOf(numberOfNoValuesEntries)
+                    .divide(BigDecimal.valueOf(numberOfValues + numberOfNoValuesEntries),
+                            mathContext).setScale(scale, roundingMode);
+            entropy = entropy.subtract(log2(noDataFrequency).multiply(noDataFrequency, mathContext))
+                    .setScale(scale, roundingMode);
         }
         return entropy;
     }
@@ -123,26 +120,33 @@ public class Selection {
         }
     }
 
-    private BigDecimal getNormalizedConditionalEntropy(Selection onWhichDepend) {
+    private BigDecimal getNormalizedConditionalEntropy(Selection onWhichDepend, boolean withNoData) {
         BigDecimal normalizedConditionalEntropy = new BigDecimal(0, mathContext)
                 .setScale(scale, roundingMode);
         for (Map.Entry<Integer, Interval> intervalEntry : onWhichDepend.intervals.entrySet().stream().toList()) {
             normalizedConditionalEntropy = countInterval(intervalEntry.getValue().getValuesIds(),
-                    normalizedConditionalEntropy);
+                    normalizedConditionalEntropy, withNoData);
         }
-        return countInterval(noValueEntries, normalizedConditionalEntropy);
+        return withNoData ? countInterval(noValueEntries, normalizedConditionalEntropy,
+                true)
+                : normalizedConditionalEntropy;
     }
 
-    private BigDecimal countInterval(List<Integer> valueIds, BigDecimal normalizedConditionalEntropy) {
+    private BigDecimal countInterval(List<Integer> valueIds, BigDecimal normalizedConditionalEntropy,
+                                     boolean withNoData) {
         int numberOfValuesTotal = 0;
         int numberOfIntervals = intervals.size();
-        int[] appearances = new int[numberOfIntervals + 1]; //frequencies[intervals.size()] - no data frequency
+        int[] appearances = new int[numberOfIntervals + (withNoData ? 1 : 0)]; //frequencies[intervals.size()] - no data frequency
         for (Integer valueId : valueIds) {
             Value value = values.get(valueId);
             if (null != value) {
                 ++appearances[value.getIntervalId()];
             } else {
-                ++appearances[numberOfIntervals];
+                if (withNoData) {
+                    ++appearances[numberOfIntervals];
+                } else {
+                    continue;
+                }
             }
             ++numberOfValuesTotal;
         }
@@ -154,21 +158,25 @@ public class Selection {
                     .subtract(BigDecimal
                             .valueOf(log2(((double) appearance) / numberOfValuesTotal))
                             .multiply(BigDecimal
-                                    .valueOf(((double) appearance) / (values.size() + noValueEntries.size())))
+                                    .valueOf(((double) appearance) / (values.size() + (withNoData ? noValueEntries.size() : 0))))
                             .setScale(scale, roundingMode));
         }
         return normalizedConditionalEntropy;
     }
 
-    private BigDecimal getInfoGain(Selection onWhichDepend) {
-        return getEntropy().subtract(getNormalizedConditionalEntropy(onWhichDepend))
+    private BigDecimal getInfoGain(Selection onWhichDepend, boolean withNoData) {
+        return getEntropy(withNoData).subtract(getNormalizedConditionalEntropy(onWhichDepend, withNoData))
                 .setScale(scale, roundingMode);
     }
 
-    public BigDecimal getGainRatio(Selection onWhichDepend) {
-        return getInfoGain(onWhichDepend)
-                .divide(onWhichDepend.getEntropy(), mathContext)
-                .setScale(scale, roundingMode);
+    public BigDecimal getGainRatio(Selection onWhichDepend, boolean withNoData) {
+        try {
+            return getInfoGain(onWhichDepend, withNoData)
+                    .divide(onWhichDepend.getEntropy(withNoData), mathContext)
+                    .setScale(scale, roundingMode);
+        } catch (ArithmeticException arithmeticException) {
+            return BigDecimal.valueOf(0);
+        }
     }
 
     public BigDecimal getCorrelation(Selection other) {
@@ -216,11 +224,11 @@ public class Selection {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Selection selection = (Selection) o;
-        return Objects.equals(valueName, selection.valueName) && Objects.equals(unitName, selection.unitName) && Objects.equals(values, selection.values) && Objects.equals(intervals, selection.intervals) && Objects.equals(min, selection.min) && Objects.equals(max, selection.max) && Objects.equals(entropy, selection.entropy) && Objects.equals(sampleMean, selection.sampleMean) && Objects.equals(sampleVariance, selection.sampleVariance);
+        return Objects.equals(valueName, selection.valueName) && Objects.equals(unitName, selection.unitName) && Objects.equals(values, selection.values) && Objects.equals(intervals, selection.intervals) && Objects.equals(min, selection.min) && Objects.equals(max, selection.max) && Objects.equals(sampleMean, selection.sampleMean) && Objects.equals(sampleVariance, selection.sampleVariance);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(valueName, unitName, values, intervals, min, max, entropy, sampleMean, sampleVariance);
+        return Objects.hash(valueName, unitName, values, intervals, min, max, sampleMean, sampleVariance);
     }
 }

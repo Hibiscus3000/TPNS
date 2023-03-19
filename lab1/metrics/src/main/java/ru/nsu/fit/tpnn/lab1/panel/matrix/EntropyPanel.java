@@ -9,7 +9,7 @@ import java.util.List;
 
 public class EntropyPanel extends JPanel {
 
-    public EntropyPanel(List<Selection> selections) {
+    public EntropyPanel(List<Selection> selections, boolean withNoData) {
         super();
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
 
@@ -31,11 +31,11 @@ public class EntropyPanel extends JPanel {
 
 
         for (int i = 0; i < matrixSize; ++i) {
-            matrixPanel.add(new JLabel(String.valueOf(selections.get(i).getEntropy())),
+            matrixPanel.add(new JLabel(String.valueOf(selections.get(i).getEntropy(withNoData))),
                     new GBC(i + 1, 1));
         }
 
-        add(new JLabel("Entropy"));
+        add(new JLabel("Entropy" + (withNoData ? "counting no data entries" : "")));
         add(new JScrollPane(matrixPanel));
         setPreferredSize(MatrixPanel.getPreferredPanelSize());
     }
