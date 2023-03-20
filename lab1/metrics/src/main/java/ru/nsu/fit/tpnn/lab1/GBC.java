@@ -8,6 +8,12 @@ public class GBC extends GridBagConstraints {
         this(gridX, gridY, 1, 1);
     }
 
+    public GBC(int gridX, int gridY, int weightX, int weightY, int fill) {
+        this(gridX, gridY, 1, 1, weightX, weightY);
+        this.fill = fill;
+        anchor = CENTER;
+    }
+
     public GBC(int gridX, int gridY, int gridWidth, int gridHeight) {
         this(gridX, gridY, gridWidth, gridHeight, 100, 100);
     }

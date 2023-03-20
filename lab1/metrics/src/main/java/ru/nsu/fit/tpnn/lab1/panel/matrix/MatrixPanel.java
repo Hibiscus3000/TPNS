@@ -1,6 +1,7 @@
 package ru.nsu.fit.tpnn.lab1.panel.matrix;
 
 import ru.nsu.fit.tpnn.lab1.GBC;
+import ru.nsu.fit.tpnn.lab1.GraphicDialog;
 import ru.nsu.fit.tpnn.lab1.selection.Selection;
 
 import javax.swing.*;
@@ -12,9 +13,7 @@ import static javax.swing.ScrollPaneConstants.*;
 
 public class MatrixPanel extends JPanel {
 
-    private static final Dimension preferredLabelSize = new Dimension(350, 30);
-    private static final Dimension preferredPanelSize = new Dimension(600, 400);
-    ;
+    private static final Dimension preferredLabelSize = new Dimension(250, 30);
 
     public MatrixPanel(List<Selection> selections, List<Selection> targets,
                        BigDecimal[][] matrix,
@@ -69,8 +68,12 @@ public class MatrixPanel extends JPanel {
 
         add(new JLabel(metricName));
 
+        JButton graphicButton = new JButton("graphic");
+        graphicButton.addActionListener(e -> new GraphicDialog(metricName, selections, targets, matrix).setVisible(true));
+
         JPanel gridBagPanel = new JPanel();
         gridBagPanel.setLayout(new GridBagLayout());
+        gridBagPanel.add(graphicButton, new GBC(0, 0, 20, 20, GridBagConstraints.NONE));
         gridBagPanel.add(horizontalLabelPane, new GBC(1, 0, selections.size(), 1,
                 100, 20));
         gridBagPanel.add(matrixPane, new GBC(1, 1, selections.size(), targets.size(),
@@ -80,11 +83,7 @@ public class MatrixPanel extends JPanel {
 
         add(gridBagPanel);
 
-        setPreferredSize(preferredPanelSize);
-    }
-
-    public static Dimension getPreferredPanelSize() {
-        return preferredPanelSize;
+        setPreferredSize(new Dimension(600, Math.min(100 + 30 * numberOfRows, 400)));
     }
 
     public static Dimension getPreferredLabelSize() {

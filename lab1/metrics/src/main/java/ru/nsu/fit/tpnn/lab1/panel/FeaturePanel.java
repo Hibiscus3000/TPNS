@@ -14,7 +14,7 @@ public class FeaturePanel extends JPanel {
     private final List<Selection> selections;
     private final List<Selection> targets = new ArrayList<>();
 
-    private static final Dimension preferredLabelAndCheckboxSize = new Dimension(350, 50);
+    private static final Dimension preferredLabelAndCheckboxSize = new Dimension(250, 30);
 
     public FeaturePanel(List<Selection> selections) {
         super();
@@ -22,9 +22,18 @@ public class FeaturePanel extends JPanel {
         setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
         JPanel labelPanel = new JPanel();
         labelPanel.setLayout(new GridBagLayout());
-        labelPanel.add(new JLabel("delete"), new GBC(0, 0));
-        labelPanel.add(new JLabel("target"), new GBC(0, 1));
-        labelPanel.add(new JLabel("name"), new GBC(0, 2));
+        JLabel deleteLabel = new JLabel("delete");
+        JLabel targetLabel = new JLabel("target");
+        JLabel nameLabel = new JLabel("name");
+        deleteLabel.setPreferredSize(preferredLabelAndCheckboxSize);
+        deleteLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        targetLabel.setPreferredSize(preferredLabelAndCheckboxSize);
+        targetLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        nameLabel.setPreferredSize(preferredLabelAndCheckboxSize);
+        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        labelPanel.add(deleteLabel, new GBC(0, 0));
+        labelPanel.add(targetLabel, new GBC(0, 1));
+        labelPanel.add(nameLabel, new GBC(0, 2));
 
         JPanel featuresSelectionPanel = new JPanel();
         featuresSelectionPanel.setLayout(new GridBagLayout());
@@ -32,6 +41,8 @@ public class FeaturePanel extends JPanel {
         for (Selection selection : selections) {
             JCheckBox deleteCheckBox = new JCheckBox();
             JCheckBox targetCheckBox = new JCheckBox();
+            targetCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
+            deleteCheckBox.setHorizontalAlignment(SwingConstants.CENTER);
             targetCheckBox.addActionListener(e -> {
                 if (targetCheckBox.isSelected()) {
                     targets.add(selection);
@@ -54,9 +65,10 @@ public class FeaturePanel extends JPanel {
             deleteCheckBox.setPreferredSize(preferredLabelAndCheckboxSize);
             featuresSelectionPanel.add(deleteCheckBox, new GBC(x, 0));
             featuresSelectionPanel.add(targetCheckBox, new GBC(x, 1));
-            JLabel nameLabel = new JLabel(selection.getValueName());
-            nameLabel.setPreferredSize(preferredLabelAndCheckboxSize);
-            featuresSelectionPanel.add(nameLabel, new GBC(x, 2));
+            JLabel valueNameLabel = new JLabel(selection.getValueName());
+            valueNameLabel.setPreferredSize(preferredLabelAndCheckboxSize);
+            valueNameLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            featuresSelectionPanel.add(valueNameLabel, new GBC(x, 2));
             ++x;
         }
 
@@ -66,6 +78,7 @@ public class FeaturePanel extends JPanel {
         boxPanel.add(new JScrollPane(featuresSelectionPanel));
 
         add(boxPanel);
+        setPreferredSize(new Dimension(400, 200));
     }
 
     public BigDecimal[][] getGainRatios(boolean withNoData) {

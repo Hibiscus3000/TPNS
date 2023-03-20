@@ -32,8 +32,6 @@ public class MetricsFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screenSize = toolkit.getScreenSize();
-        setPreferredSize(new Dimension((int) (9 * screenSize.getWidth() / 10),
-                (int) (9 * screenSize.getHeight() / 10)));
 
         fileChooser.setCurrentDirectory(new File(".."));
         fileChooser.setMultiSelectionEnabled(false);
@@ -68,6 +66,7 @@ public class MetricsFrame extends JFrame {
                         remove(matricesPanelScrollPane);
                     }
                     add(featurePanel = new FeaturePanel(selections), BorderLayout.CENTER);
+                    setPreferredSize(null);
                     revalidate();
                     pack();
                     setLocationRelativeTo(null);
@@ -112,6 +111,10 @@ public class MetricsFrame extends JFrame {
             matricesPanelScrollPane = new JScrollPane(matricesPanel);
             add(matricesPanelScrollPane);
             revalidate();
+            setPreferredSize(new Dimension((int) (9 * screenSize.getWidth() / 10),
+                    (int) (9 * screenSize.getHeight() / 10)));
+            pack();
+            setLocationRelativeTo(null);
         });
         findButtonPanel.add(findButton);
         add(findButtonPanel, BorderLayout.SOUTH);

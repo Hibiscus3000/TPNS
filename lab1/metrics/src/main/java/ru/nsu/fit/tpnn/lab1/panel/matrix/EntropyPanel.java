@@ -35,8 +35,8 @@ public class EntropyPanel extends JPanel {
                     new GBC(i + 1, 1));
         }
 
-        add(new JLabel("Entropy" + (withNoData ? "counting no data entries" : "")));
+        add(new JLabel("Entropy" + (withNoData ? " counting no data entries" : "")));
         add(new JScrollPane(matrixPanel));
-        setPreferredSize(MatrixPanel.getPreferredPanelSize());
+        setPreferredSize(new Dimension(600, 200));
     }
 }
