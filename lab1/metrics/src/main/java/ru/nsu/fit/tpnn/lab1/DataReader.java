@@ -62,6 +62,7 @@ public class DataReader {
             Selection selection = selections.get(i);
             if (selection.isEmpty()) {
                 selections.remove(selection);
+                --i;
             } else {
                 selection.setNoDataEntries(entryInd - firstDataRowInd);
             }
