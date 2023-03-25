@@ -11,6 +11,8 @@ import java.awt.geom.Rectangle2D;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 
 import static ru.nsu.fit.tpnn.lab1.selection.Value.roundingMode;
@@ -20,6 +22,7 @@ public class GraphicDialog extends JDialog {
 
     private static final MathContext mathContext = new MathContext(10, RoundingMode.HALF_EVEN);
 
+    private final List<Selection> selections;
     private final List<Selection> targets;
     private final BigDecimal[][] matrix;
 
@@ -31,6 +34,7 @@ public class GraphicDialog extends JDialog {
     public GraphicDialog(String title, List<Selection> selections, List<Selection> targets,
                          BigDecimal[][] matrix) {
         setTitle(title);
+        this.selections = selections;
         this.targets = targets;
         this.matrix = matrix;
         spotMinMax();
@@ -43,6 +47,7 @@ public class GraphicDialog extends JDialog {
         JScrollPane scrollPane = new JScrollPane(getValueNamesPanel(selections));
         scrollPane.setPreferredSize(new Dimension(300, 550));
         add(scrollPane);
+        printSorted();
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         pack();
         setLocationRelativeTo(null);
@@ -193,6 +198,45 @@ public class GraphicDialog extends JDialog {
 
         private double getGraphicX(int elementIndex) {
             return startXPosition + (elementIndex + 1) * twoLevelsDistanceX;
+        }
+    }
+
+    private void printSorted() {
+        for (int i = 0; i < targets.size(); ++i) {
+            System.out.println("Gain ratio for " + targets.get(i).getValueName());
+            ArrayIndexComparator gainRatioComparator = new ArrayIndexComparator(matrix[i]);
+            Integer[] indices = gainRatioComparator.createIndexArray();
+            Arrays.sort(indices, gainRatioComparator);
+            for (int j = 0;j < indices.length; ++j) {
+                Integer index = indices[j];
+                System.out.printf("\t%d) %s - %f%n",j,selections.get(index).getValueName(),matrix[i][index]);
+            }
+        }
+    }
+
+    public class ArrayIndexComparator implements Comparator<Integer>
+    {
+        private final BigDecimal[] array;
+
+        public ArrayIndexComparator(BigDecimal[] array)
+        {
+            this.array = array;
+        }
+
+        public Integer[] createIndexArray()
+        {
+            Integer[] indexes = new Integer[array.length];
+            for (int i = 0; i < array.length; i++)
+            {
+                indexes[i] = i;
+            }
+            return indexes;
+        }
+
+        @Override
+        public int compare(Integer index1, Integer index2)
+        {
+            return array[index1].compareTo(array[index2]);
         }
     }
 }
