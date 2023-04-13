@@ -1,0 +1,15 @@
+{
+  "clear_weights": true,
+  "data_file": "delete.csv",
+  "start_row": 3,
+  "end_row": 187,
+  "start_attributes" : 0,
+  "end_attributes": 30,
+  "start_targets": 31,
+  "end_targets" : 32,
+  "samples_file": "samples.pickle",
+  "weights_file": "weights.pickle",
+  "learning_rate_changes": [25],
+  "learning_rates": [0.001, 0.0002],
+  "epochs": 50
+}
