@@ -41,11 +41,12 @@ def split_intervals(samples):
     interval_length = 1.0 / intervals_total
     intervals = {}
     for index, sample in samples:
-        interval_id = int(sample / interval_length)
-        if interval_id not in intervals:
-            intervals[interval_id] = [sample]
-        else:
-            intervals[interval_id].append(index)
+        if sample is not None:
+            interval_id = int(sample / interval_length)
+            if interval_id not in intervals:
+                intervals[interval_id] = [sample]
+            else:
+                intervals[interval_id].append(index)
     return intervals
 
 def samples_to_categories(categories_to_samples):
