@@ -21,9 +21,8 @@ with open('config.json', 'r') as config_file:
     coder = OilCoder() if is_oil else MushroomsCoder()
     attributes = coder.encode_attributes(str_attr)
     targets = coder.encode_targets(str_targets)
-    attr_deltas, attr_mins, norm_attr = coder.normalize(list(
-        attributes.values()))
-    target_deltas, target_mins, norm_targets = coder.normalize_targets(list(
-        targets.values()))
+    attr_deltas, attr_mins, norm_attr = coder.normalize_attributes(attributes)
+    target_deltas, target_mins, norm_targets = coder.normalize_targets(targets)
 
-    
+    normalized_samples = coder.get_normalized_samples(norm_attr,norm_targets)
+    print(normalized_samples)
