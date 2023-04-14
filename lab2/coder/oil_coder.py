@@ -51,8 +51,9 @@ class OilCoder(Coder):
     def get_normalized_samples(self, sample_ids, attributes, targets):
         attrs_t = np.transpose(attributes)
         targ_t = np.transpose(targets)
-        return {sample_ids[i]: np.concatenate((attrs_t[i], targ_t[i]))
-                for i in range(0, len(sample_ids))}
+        return {sample_ids[i]: attrs_t[i] for i in range(0, len(sample_ids))}, {
+            sample_ids[i]: targ_t[i] for i
+            in range(0, len(sample_ids))}
 
     def decode(self, deltas, targets):
         return np.transpose(targets * deltas)

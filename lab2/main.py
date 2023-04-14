@@ -17,7 +17,8 @@ with open('config.json', 'r') as config_file:
                                     config["end_row"],
                                     config['start_targets'],
                                     config['end_targets'])
-
+    str_attr = {sample_id : attr_sample for sample_id, attr_sample in
+                str_attr.items() if sample_id in str_targets}
     coder = OilCoder() if is_oil else MushroomsCoder()
     attributes = coder.encode(str_attr.values(), withNones=False)
     targets = coder.encode(str_targets.values(), withNones=True)
@@ -26,6 +27,5 @@ with open('config.json', 'r') as config_file:
     target_deltas, target_mins, norm_targets = coder.normalize_targets(
         list(targets.values()))
 
-    normalized_samples = coder.get_normalized_samples(list(str_targets.keys()),
-                                                      norm_attr,
-                                                      norm_targets)
+    normalized_attrs, normalized_targets = coder.get_normalized_samples(list(
+        str_targets.keys()), norm_attr, norm_targets)
