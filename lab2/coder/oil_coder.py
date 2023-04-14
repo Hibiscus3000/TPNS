@@ -4,61 +4,55 @@ import numpy as np
 
 class OilCoder(Coder):
 
-    def encode(self, str_samples, withNones):
-        samples = {}
+    def encode(self, samples, withNones):
+        attributes = {}
 
-        for i, str_attributes in str_samples:
-            for str_attribute in str_attributes:
-                if (None != str_attribute | withNones):
-                    attribute = float(str_attribute) if str_attribute is not \
-                                                      None else None
-                    if i not in samples:
-                        samples[i] = [float(attribute)]
+        for sample in samples:
+            for i in range(0, len(sample)):
+                if withNones | (sample[i] is not None):
+                    attribute = float(sample[i]) if sample[
+                                                        i] is not None else None
+                    if i not in attributes:
+                        attributes[i] = [attribute]
                     else:
-                        samples[i].append(float(attribute))
-        return samples
+                        attributes[i].append(attribute)
+        return attributes
 
-    def get_mins_deltas(self,samples):
-        deltas = {}
-        mins = {}
-        for sample_id, sample in samples:
-            min = np.min(sample)
-            max = np.max(sample)
-            mins[sample]
-            deltas.append(max - min)
+    def normalize_attribute(self, attribute):
+        min = np.min(attribute)
+        max = np.max(attribute)
+        delta = max - min
+        return min, delta, (np.array(attribute) - min) / delta
 
-        return mins, deltas
-
-    def normalize_attributes(self, attributes):
-        mins, deltas = self.get_mins_deltas(attributes)
-        normalized_attrs = (attr_list - np.transpose(np.atleast_2d(mins))) / \
-        np.transpose(np.atleast_2d(deltas))
-        return deltas, mins,
+    def normalize(self, attributes):
+        deltas = []
+        mins = []
+        normalized_attributes = []
+        for attribute in attributes:
+            min, delta, normalized_attribute = self.normalize_attribute(
+                attribute)
+            mins.append(min)
+            deltas.append(delta)
+            normalized_attributes.append(normalized_attribute.tolist())
+        return deltas, mins, normalized_attributes
 
     def normalize_targets(self, targets):
-        no_nones_targets = {sample_id: [value for value in target_values if
-                                        value is not None] for
-                            sample_id, target_values in targets.items()}
-        mins, deltas = self.get_mins_deltas(no_nones_targets)
-
-        normalized_targets = {}
-        for sample_id, sample in no_nones_targets
-            targets
-        for i in range(0, len(targets)):
-            if targets[i] is None:
-                normalized_targets.insert(i, None)
+        no_nones_targets = [[t for t in target if t is not None] for target in
+                            targets]
+        deltas, mins, normalized_targets = self.normalize(
+            no_nones_targets)
+        for j in range(0, len(targets)):
+            for i in range(0, len(targets[j])):
+                if targets[j][i] is None:
+                    normalized_targets[j].insert(i, None)
 
         return deltas, mins, normalized_targets
 
-    def get_normalized_samples(self, normalized_attributes,
-                               normalized_targets):
-        normalized_samples = {}
-        for sample_id, sample in normalized_attributes:
-            normalized_samples[sample_id] = np.concatenate(sample,
-                                                       normalized_targets[
-                                                           sample_id])
-
-        return normalized_samples
+    def get_normalized_samples(self, sample_ids, attributes, targets):
+        attrs_t = np.transpose(attributes)
+        targ_t = np.transpose(targets)
+        return {sample_ids[i]: np.concatenate((attrs_t[i], targ_t[i]))
+                for i in range(0, len(sample_ids))}
 
     def decode(self, deltas, targets):
         return np.transpose(targets * deltas)

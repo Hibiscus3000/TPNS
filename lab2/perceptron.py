@@ -32,7 +32,7 @@ class Perceptron:
     def cost(self, output, y):
         C = 0  # C - cost function
         for i in range(0, len(y)):
-            if (None != y[i]):
+            if (y[i] is not None):
                 C += (output[i] - y[i]) ** 2
 
     # z = Wa(L - 1) + b,a(L) = f(z), f - activation function, y - targets

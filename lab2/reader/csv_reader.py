@@ -8,10 +8,6 @@ class CsvReader(Reader):
             self.content = list(csv.reader(data_file,
                                            delimiter=';'))
 
-    # def fix_nulls(self, csv):
-    #     for line in csv:
-    #         yield line.replace('\0', '')
-
     def get_value(self, row, column):
         value = re.sub(r'[^0-9.,]', "",self.content[row][column])
         value = value.replace(',','.')
