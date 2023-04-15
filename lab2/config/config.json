@@ -1,0 +1,32 @@
+{
+  "reader": {
+    "data_file": "delete.csv",
+    "start_row": 3,
+    "end_row": 187,
+    "start_attributes": 0,
+    "end_attributes": 30,
+    "start_targets": 31,
+    "end_targets": 32
+  },
+  "perceptron": {
+    "clear_weights": false,
+    "neurons": [
+      20,
+      10
+    ],
+    "learning_rates": {
+      "0": 0.001,
+      "25": 0.0002
+    },
+    "perceptron_file": "pickle/perceptron.pickle",
+    "epoch": 50,
+    "iterations_on_last_epoch": 200
+  },
+  "sorter": {
+    "clear_samples": false,
+    "training_data_per": 70,
+    "entropy_bottom_line": 40,
+    "learning_file": "pickle/learning.pickle",
+    "test_file": "pickle/testing.pickle"
+  }
+}

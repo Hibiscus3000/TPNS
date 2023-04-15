@@ -1,17 +1,17 @@
 import numpy as np
 from logging import *
-
+from formater import *
 
 class Perceptron:
-    def __init__(self, layers, neurons, learning_rate):
+    def __init__(self, neurons):
+        self.layers = len(neurons)
         self.b = []
         self.W = []
-        self.layers = layers
-        self.neurons = neurons
-        self.learning_rate = learning_rate
-        for i in range(1, layers):
-            self.W[i] = np.random.randn(neurons[i], neurons[i - 1])
-            self.b[i] = np.random.randn(neurons[i])
+        for i in range(1, self.layers):
+            self.W.append(np.random.rand(neurons[i], neurons[i - 1]) - 0.5)
+            self.b.append(np.random.rand(neurons[i]) - 0.5)
+        getLogger(__name__).debug("perceptron initialized")
+        self.log_weights_biases()
 
     # z = Wa + b
     def sigmoid(self, z):
@@ -63,26 +63,44 @@ class Perceptron:
 
         return dW, db
 
-    def learn_it(self, x, y):
+    def learn_it(self, x, y, learning_rate):
         z, a = self.forward_prop(x)
 
         dW, db = self.back_prop(z, a, y)
         for i in range(1, self.layers):
-            self.W[i] -= self.learning_rate * dW[i]
-            self.b[i] -= self.learning_rate * db[i]
+            self.W[i] -= learning_rate * dW[i]
+            self.b[i] -= learning_rate * db[i]
         return a[self.layers - 1]
 
-    def learn(self, X, Y):
+    def learn(self, X, Y, learning_rate):
         i = 0
-        for sample_id, x in X.items():
-            output = self.learn_it(X, Y[sample_id])
+        for sample_id, x in X:
+            output = self.learn_it(X, Y[sample_id], learning_rate)
             self.log_it_results(DEBUG if i % 5 else INFO, "learning", sample_id,
                                 output, Y[sample_id])
             i += 1
 
+    # learnings_samples, test_samples: attributes => targets
+    # learning_rates: epoch => new learning rate
+    def work(self, epoch, learning_attributes, learning_targets,
+             test_attributes, test_targets, learning_rates, it_on_last_epoch):
+        for i in range(0, epoch):
+            if i in learning_rates:
+                learning_rate = learning_rates[i]
+            # learning
+            X = list(learning_attributes.items())
+            Y = list(learning_targets.items())
+            if (i == epoch - 1) & (0 != it_on_last_epoch):
+                X = X[:it_on_last_epoch]
+                Y = Y[:it_on_last_epoch]
+            self.learn(X, Y, learning_rate)
+
+            # testing
+            self.predict(list(test_attributes.items()), list(test_targets.items()))
+
     def predict(self, X, Y):
         i = 0
-        for sample_id, x in X.items():
+        for sample_id, x in X:
             _, a = self.forward_prop(x)
             self.log_it_results(DEBUG if i % 5 else INFO, "predicting", sample_id,
                                 a[self.layers - 1], Y[sample_id])
@@ -96,3 +114,7 @@ class Perceptron:
         getLogger(__name__).log(level=level, msg="output = [{}]".format(' '.join(map(str, y))))
         getLogger(__name__).log(level=level, msg="cost: %f [{}]"
                                 .format(cost, ' '.join(map(str, cost_component))))
+
+    def log_weights_biases(self):
+        getLogger(__name__).debug("weights:\n" + format_matrix_array(self.W))
+        getLogger(__name__).debug("biases:\n" + format_matrix_array(self.b))

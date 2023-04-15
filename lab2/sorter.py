@@ -23,7 +23,7 @@ def sort(normalized_attributes, normalized_targets, training_data_per,
 
     logger.info("found good distribution with entropies: attributes - %f, "
                      "targets - %f", attributes_entropy, targets_entropy)
-    return learning_ids, test_ids
+    return sorted(learning_ids), sorted(test_ids)
 
 
 def get_samples_entropy(all_samples, ids):
