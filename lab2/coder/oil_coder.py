@@ -1,6 +1,6 @@
 from coder.coder import Coder
 import numpy as np
-
+from logging import *
 
 class OilCoder(Coder):
 
@@ -16,6 +16,7 @@ class OilCoder(Coder):
                         attributes[i] = [attribute]
                     else:
                         attributes[i].append(attribute)
+        getLogger(__name__).info("encoded %d attributes", len(attributes))
         return attributes
 
     def normalize_attribute(self, attribute):
@@ -34,6 +35,7 @@ class OilCoder(Coder):
             mins.append(min)
             deltas.append(delta)
             normalized_attributes.append(normalized_attribute.tolist())
+        getLogger(__name__).info("normalized %d attributes", len(normalized_attributes))
         return deltas, mins, normalized_attributes
 
     def normalize_targets(self, targets):
@@ -45,7 +47,8 @@ class OilCoder(Coder):
             for i in range(0, len(targets[j])):
                 if targets[j][i] is None:
                     normalized_targets[j].insert(i, None)
-
+        getLogger(__name__).info("normalized %d targets",
+                                 len(normalized_targets))
         return deltas, mins, normalized_targets
 
     def get_normalized_samples(self, sample_ids, attributes, targets):

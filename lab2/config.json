@@ -7,6 +7,8 @@
   "end_attributes": 30,
   "start_targets": 31,
   "end_targets" : 32,
+  "training_data_per": 70,
+  "entropy_bottom_line" : 40,
   "samples_file": "samples.pickle",
   "weights_file": "weights.pickle",
   "learning_rate_changes": [25],

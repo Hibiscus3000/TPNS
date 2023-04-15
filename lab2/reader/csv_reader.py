@@ -1,14 +1,15 @@
 from reader.reader import Reader
+from logging import *
 import csv
 import re
 
+
 class CsvReader(Reader):
-    def __init__(self, filename):
-        with open(filename) as data_file:
-            self.content = list(csv.reader(data_file,
-                                           delimiter=';'))
+
+    def read_file(self, file):
+        return list(csv.reader(file, delimiter=';'))
 
     def get_value(self, row, column):
-        value = re.sub(r'[^0-9.,]', "",self.content[row][column])
-        value = value.replace(',','.')
+        value = re.sub(r'[^0-9.,]', "", self.content[row][column])
+        value = value.replace(',', '.')
         return value if value != "" else None
