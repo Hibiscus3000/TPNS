@@ -77,7 +77,7 @@ class Perceptron:
         dWs = []
         for sample_id, x in X:
             db, dW, output = self.learn_it(x, Y[sample_id], learning_rate)
-            cost.append(self.cost(output,Y[sample_id]))
+            cost.append(self.cost(output, Y[sample_id]))
             dbs.append(db)
             dWs.append(dW)
             i += 1
@@ -87,12 +87,14 @@ class Perceptron:
     def predict(self, X, Y):
         i = 0
         cost = []
+        output = {}
         for sample_id, x in X:
             _, a = self.forward_prop(x)
             cost.append(self.cost(a[self.layers], Y[sample_id]))
             i += 1
+            output[sample_id] = a[self.layers]
 
-        return cost
+        return output, cost
 
     def undo_learning(self, db, dW, learning_rate):
         for j in range(0, len(dW)):
@@ -118,20 +120,21 @@ class Perceptron:
                 Y = Y[:it_on_last_epoch]
             Y = {sample_id: sample for sample_id, sample in Y}
 
-            #learning
+            # learning
             dbs, dWs, learn_epoch_costs = self.learn(X, Y, learning_rate)
             learn_epoch_cost = np.sum(learn_epoch_costs)
             if len(costs_learning) > 0:
-                    if self.check_stop('learning',costs_learning[-1:][0],learn_epoch_cost):
-                        self.undo_learning(dbs,dWs,learning_rate)
-                        break
+                if self.check_stop('learning', costs_learning[-1:][0], learn_epoch_cost):
+                    self.undo_learning(dbs, dWs, learning_rate)
+                    break
             costs_learning.append(learn_epoch_cost)
 
-            #testing
-            test_epoch_cost = np.sum(self.predict(list(test_attributes.items()), test_targets))
+            # testing
+            _, test_epoch_costs = self.predict(list(test_attributes.items()), test_targets)
+            test_epoch_cost = np.sum(test_epoch_costs)
             if len(costs_testing) > 0:
-                if self.check_stop('predicting',costs_testing[-1:][0],test_epoch_cost):
-                    self.undo_learning(dbs,dWs,learning_rate)
+                if self.check_stop('predicting', costs_testing[-1:][0], test_epoch_cost):
+                    self.undo_learning(dbs, dWs, learning_rate)
                     break
             costs_testing.append(test_epoch_cost)
 

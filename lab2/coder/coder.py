@@ -7,5 +7,5 @@ class Coder(abc.ABC):
         """encode string attributes into numbers"""
 
     @abc.abstractmethod
-    def decode(self, deltas, results):
+    def decode(self,mins, deltas, results):
         """decode perceptron results"""

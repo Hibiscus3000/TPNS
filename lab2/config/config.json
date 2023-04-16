@@ -13,13 +13,13 @@
     "neurons": [
       5
     ],
-    "only_predict": true,
+    "only_predict": false,
     "learning_rates": {
       "0": 0.01
     },
-    "perceptron_file": "pickle/perceptron.pickle",
-    "costs_file": "pickle/costs.pickle",
-    "epoch": 1000,
+    "perceptron_file": "pickle/perceptron_5_0.01.pickle",
+    "costs_file": "pickle/costs_5_0.01.pickle",
+    "epoch": 0,
     "iterations_on_last_epoch": 100,
     "critical_cost": 0.3
   },
@@ -30,7 +30,7 @@
     "clear_samples": false,
     "training_data_per": 70,
     "entropy_bottom_line": 40,
-    "learning_file": "pickle/learning.pickle",
-    "test_file": "pickle/testing.pickle"
+    "learning_file": "pickle/learning_5_0.01.pickle",
+    "test_file": "pickle/testing_5_0.01.pickle"
   }
 }

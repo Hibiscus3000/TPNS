@@ -58,5 +58,6 @@ class OilCoder(Coder):
             sample_ids[i]: targ_t[i] for i
             in range(0, len(sample_ids))}
 
-    def decode(self, deltas, targets):
-        return np.transpose(targets * deltas)
+    def decode(self, mins, deltas, targets):
+        return [targets[i] * deltas[i] + mins[i] if targets[i] is not None else None
+                for i in range(0, len(mins))]
