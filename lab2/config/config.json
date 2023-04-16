@@ -11,16 +11,19 @@
   "perceptron": {
     "clear_weights": false,
     "neurons": [
-      20,
-      10
+      5
     ],
     "learning_rates": {
-      "0": 0.001,
-      "25": 0.0002
+      "0": 0.01
     },
     "perceptron_file": "pickle/perceptron.pickle",
-    "epoch": 50,
-    "iterations_on_last_epoch": 200
+    "costs_file": "pickle/costs.pickle",
+    "epoch": 0,
+    "iterations_on_last_epoch": 100,
+    "critical_cost": 0.3
+  },
+  "diagram":{
+    "max_iterations": 100
   },
   "sorter": {
     "clear_samples": false,
