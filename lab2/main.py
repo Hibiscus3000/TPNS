@@ -9,7 +9,7 @@ from coder.mushrooms_coder import MushroomsCoder
 from sorter import *
 from perceptron import *
 from diagram_builder import *
-from cost_handler import *
+from cost import *
 
 
 def read_config():
@@ -98,17 +98,15 @@ def get_learning_rates(learning_rates):
 
 def proc_costs(learning_costs, testing_costs, perceptron_config):
     if perceptron_config['clear_weights']:
-        cost_handler = CostHandler()
+        cost = Cost()
     else:
         with open(perceptron_config['costs_file'],'rb') as costs_file:
-            cost_handler = pickle.load(costs_file)
-    cost_handler.add_costs(True, learning_costs)
-    cost_handler.add_costs(False, testing_costs)
-    show_cost_diagram(list(cost_handler.learning_costs.values()),
-                      list(cost_handler.testing_costs.values()),
-                      config['diagram']['max_iterations'])
+            cost = pickle.load(costs_file)
+    cost.learning_costs += learning_costs
+    cost.testing_costs += testing_costs
+    show_cost_diagram(cost.learning_costs, cost.testing_costs, config['diagram']['max_values'])
 
-    return cost_handler
+    return cost
 
 
 config = read_config()

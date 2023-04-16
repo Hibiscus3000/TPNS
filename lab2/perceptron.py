@@ -68,18 +68,37 @@ class Perceptron:
         for i in range(0, self.layers):
             self.W[i] -= learning_rate * dW[i]
             self.b[i] -= learning_rate * db[i]
-        return a[self.layers]
+        return db, dW, a[self.layers]
 
     def learn(self, X, Y, learning_rate):
         i = 0
-        costs = []
+        cost = []
+        dbs = []
+        dWs = []
         for sample_id, x in X:
-            output = self.learn_it(x, Y[sample_id], learning_rate)
-            costs.append(self.log_it_results(DEBUG if i % 5 else INFO, "learning", sample_id,
-                                             output, Y[sample_id]))
+            db, dW, output = self.learn_it(x, Y[sample_id], learning_rate)
+            cost.append(self.cost(output,Y[sample_id]))
+            dbs.append(db)
+            dWs.append(dW)
             i += 1
 
-        return costs
+        return dbs, dWs, cost
+
+    def predict(self, X, Y):
+        i = 0
+        cost = []
+        for sample_id, x in X:
+            _, a = self.forward_prop(x)
+            cost.append(self.cost(a[self.layers], Y[sample_id]))
+            i += 1
+
+        return cost
+
+    def undo_learning(self, db, dW, learning_rate):
+        for j in range(0, len(dW)):
+            for i in range(0, self.layers):
+                self.W[i] += learning_rate * dW[j][i]
+                self.b[i] += learning_rate * db[j][i]
 
     # learnings_samples, test_samples: attributes => targets
     # learning_rates: epoch => new learning rate
@@ -98,39 +117,32 @@ class Perceptron:
                 X = X[:it_on_last_epoch]
                 Y = Y[:it_on_last_epoch]
             Y = {sample_id: sample for sample_id, sample in Y}
-            costs_learning += self.learn(X, Y, learning_rate)
 
-            # testing
-            costs_testing += self.predict(list(test_attributes.items()), test_targets)
+            #learning
+            dbs, dWs, learn_epoch_costs = self.learn(X, Y, learning_rate)
+            learn_epoch_cost = np.sum(learn_epoch_costs)
+            if len(costs_learning) > 0:
+                    if self.check_stop('learning',costs_learning[-1:][0],learn_epoch_cost):
+                        self.undo_learning(dbs,dWs,learning_rate)
+                        break
+            costs_learning.append(learn_epoch_cost)
+
+            #testing
+            test_epoch_cost = np.sum(self.predict(list(test_attributes.items()), test_targets))
+            if len(costs_testing) > 0:
+                if self.check_stop('predicting',costs_testing[-1:][0],test_epoch_cost):
+                    self.undo_learning(dbs,dWs,learning_rate)
+                    break
+            costs_testing.append(test_epoch_cost)
 
         return costs_learning, costs_testing
 
-    def predict(self, X, Y):
-        i = 0
-        costs = []
-        for sample_id, x in X:
-            _, a = self.forward_prop(x)
-            costs.append(self.log_it_results(DEBUG if i % 5 else INFO, "predicting", sample_id,
-                                             a[self.layers], Y[sample_id]))
-            i += 1
-
-        return costs
-
-    def log_it_results(self, level, action_name, sample_id, output, y):
-        getLogger(__name__).log(level=level, msg="{} {}...".format(action_name, sample_id))
-        cost = self.cost(output, y)
-        cost_component = self.cost_component(output, y)
-        getLogger(__name__).log(level=level, msg="y = [{}]".format(' '.join(map(str, y))))
-        getLogger(__name__).log(level=level, msg="output = [{}]".format(' '.join(map(str, output))))
-        getLogger(__name__).log(level=level, msg="[{}{}] cost: {} [{}]"
-                                .format(action_name[0], sample_id,
-                                        cost, ' '.join(map(str, cost_component))))
-        for i in range(0, len(cost_component)):
-            if (cost_component[i] is not None):
-                if (cost_component[i] > self.critical_cost):
-                    getLogger(__name__).warning("Cost function exceeds critical limit: {:s} {:d}:{:d}:{:.3f}"
-                                                .format(action_name, sample_id, i, cost_component[i]))
-        return cost_component
+    def check_stop(self, action_name, previous_cost, current_cost):
+        if current_cost > previous_cost:
+            if 'y' != input('{0} cost increased, previous: {1:.3f}, current: {2:.3f}. Do you want to continue {0}[y]'
+                                    .format(action_name, previous_cost, current_cost)):
+                return True
+        return False
 
     def log_weights_biases(self):
         getLogger(__name__).debug("weights:\n" + format_matrix_array(self.W))

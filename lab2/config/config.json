@@ -13,17 +13,18 @@
     "neurons": [
       5
     ],
+    "only_predict": true,
     "learning_rates": {
       "0": 0.01
     },
     "perceptron_file": "pickle/perceptron.pickle",
     "costs_file": "pickle/costs.pickle",
-    "epoch": 0,
+    "epoch": 1000,
     "iterations_on_last_epoch": 100,
     "critical_cost": 0.3
   },
   "diagram":{
-    "max_iterations": 100
+    "max_values": 0
   },
   "sorter": {
     "clear_samples": false,
