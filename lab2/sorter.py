@@ -1,5 +1,7 @@
-from metrics import *
 from logging import *
+
+from metrics import *
+
 
 def sort(normalized_attributes, normalized_targets, training_data_per,
          entropy_bottom_line):
@@ -27,10 +29,7 @@ def sort(normalized_attributes, normalized_targets, training_data_per,
 
 
 def get_samples_entropy(all_samples, ids):
-    tested_samples = [sample for sample_id, sample \
-                      in all_samples.items() if
-                      sample_id in ids]
-    tested_attributes = transpose(tested_samples)
+    tested_attributes = samples_to_attributes(all_samples, ids)
     entropy = 0
     for tested_attribute in tested_attributes:
         entropy += get_entropy(list(categories_to_sample_amount(split_intervals(

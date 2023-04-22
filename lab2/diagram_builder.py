@@ -32,7 +32,6 @@ def show_cost_diagram(learning_cost, testing_cost, max_epoch):
     mtl.use('Qt5Agg')
     fig = plt.figure(figsize=(20, 12))
     fig.subplots_adjust(hspace=0.4)
-    fig.suptitle('Cost')
 
     #learning cost
     add_one_plot(fig, 211, learning_cost, max_epoch, 'learning', 'epoch')

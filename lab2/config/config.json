@@ -1,36 +1,41 @@
 {
   "reader": {
-    "data_file": "delete.csv",
-    "start_row": 3,
-    "end_row": 187,
-    "start_attributes": 0,
-    "end_attributes": 30,
-    "start_targets": 31,
-    "end_targets": 32
+    "data_file": "data/gribs.csv",
+    "start_row": 0,
+    "end_row": 8123,
+    "start_attributes": 1,
+    "end_attributes": 22,
+    "start_targets": 0,
+    "end_targets": 0
   },
   "perceptron": {
     "clear_weights": false,
     "neurons": [
-      5
+      13
     ],
-    "only_predict": false,
+    "only_predict": true,
     "learning_rates": {
       "0": 0.01
     },
-    "perceptron_file": "pickle/perceptron_5_0.01.pickle",
-    "costs_file": "pickle/costs_5_0.01.pickle",
+    "perceptron_file": "pickle/oil_perceptron_13.pickle",
+    "costs_file": "pickle/oil_costs_13.pickle",
     "epoch": 0,
     "iterations_on_last_epoch": 100,
     "critical_cost": 0.3
   },
-  "diagram":{
+  "diagram": {
     "max_values": 0
   },
   "sorter": {
     "clear_samples": false,
     "training_data_per": 70,
     "entropy_bottom_line": 40,
-    "learning_file": "pickle/learning_5_0.01.pickle",
-    "test_file": "pickle/testing_5_0.01.pickle"
+    "learning_file": "pickle/oil_learning_13.pickle",
+    "test_file": "pickle/oil_testing_13.pickle"
+  },
+  "processor": {
+    "output_data_file": "data/cleared_gribs.csv",
+    "critical_correlation": 0.65,
+    "emission_threshold": 4
   }
 }
