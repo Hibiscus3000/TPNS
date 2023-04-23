@@ -4,18 +4,17 @@ import logging.config
 import pickle
 from coder.mushrooms_coder import MushroomsCoder
 from coder.oil_coder import OilCoder
-from cost import *
 from csv_reader import *
-from diagram_builder import *
+from meter import *
 from perceptron import *
 from sorter import *
 
 
-def read_config():
+def read_config(name):
     np.set_printoptions(precision=3)
     with open('config/logging.json', 'r') as logging_config_file:
         logging_config = json.load(logging_config_file)
-    with open('config/config.json', 'r') as config_file:
+    with open(f'config/{name}_config.json', 'r') as config_file:
         config = json.load(config_file)
     logging.config.dictConfig(logging_config)
     getLogger().handlers[1].doRollover()
@@ -24,7 +23,7 @@ def read_config():
 
 def read_data(reader_config):
     data_file_name = reader_config['data_file']
-    is_oil = data_file_name.startswith('oil')
+    is_oil = data_file_name.startswith('data/oil')
     reader = CsvReader(data_file_name)
     str_attr = reader.get_values(reader_config['start_row'],
                                  reader_config["end_row"],
@@ -77,12 +76,12 @@ def get_samples(sorter_config, normalized_attrs, normalized_targets):
     return learning_ids, test_ids
 
 
-def get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_neurons):
+def get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_neurons, meter, coder):
     if perceptron_config['clear_weights']:
         neurons = perceptron_config['neurons']
         neurons.insert(0, number_of_input_neurons)  # insert input layer
         neurons.append(number_of_output_neurons)  # appending output layer
-        perceptron = Perceptron(neurons)
+        perceptron = Perceptron(neurons, meter, coder, perceptron_config['need_to_decode'])
     else:
         getLogger(__name__).debug("obtaining previous perceptron weight and biases")
         with open(perceptron_config['perceptron_file'], 'rb') as perceptron_file:
@@ -100,62 +99,40 @@ def get_learning_rates(learning_rates):
     return {int(epoch): learning_rate for epoch, learning_rate in learning_rates.items()}
 
 
-def proc_costs(learning_costs, testing_costs, perceptron_config):
-    if perceptron_config['clear_weights']:
-        cost = Cost()
-    else:
-        with open(perceptron_config['costs_file'], 'rb') as costs_file:
-            cost = pickle.load(costs_file)
-    cost.learning_costs += learning_costs
-    cost.testing_costs += testing_costs
-    show_cost_diagram(cost.learning_costs, cost.testing_costs, config['diagram']['max_values'])
-
-    return cost
+def get_meter(name, number_of_targets):
+    return QualificationMeter(number_of_targets) if 'mushrooms' == name \
+        else RegressionMeter(number_of_targets)
 
 
 if __name__ == '__main__':
-    config = read_config()
+    config = read_config(sys.argv[1])
     is_oil, str_attr, str_targets = read_data(config['reader'])
     coder, number_of_input_neurons, number_of_output_neurons, normalized_attrs, normalized_targets = \
         code_data(str_attr, str_targets, is_oil)
     learning_ids, test_ids = get_samples(config['sorter'], normalized_attrs, normalized_targets)
-    perceptron_config = config['perceptron']
-    perceptron = get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_neurons)
     learning_attrs = get_samples_by_ids(normalized_attrs, learning_ids)
     learning_targets = get_samples_by_ids(normalized_targets, learning_ids)
     test_attrs = get_samples_by_ids(normalized_attrs, test_ids)
     test_targets = get_samples_by_ids(normalized_targets, test_ids)
+    meter = get_meter(sys.argv[1], number_of_output_neurons)
+    perceptron_config = config['perceptron']
+    perceptron = get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_neurons,
+                                meter, coder)
     if perceptron_config['only_predict']:
         attrs = {**learning_attrs, **test_attrs}
         targets = {**learning_targets, **test_targets}
-        outputs, cost = perceptron.predict(attrs.items(), targets)
-        for sample_id, target in targets.items():
-            output_decoded = coder.decode(outputs[sample_id])
-            expected_decoded = coder.decode(target)
-            output_str = ''
-            for output in output_decoded:
-                output_str += f' {output:5.3f}'
-            expected_str = ''
-            for expected in expected_decoded:
-                expected_str += f' {expected:5.3f}' if expected is not None else '      '
-
-            suffix = 'l' if sample_id in learning_ids else 'p'
-            getLogger(__name__).warning('{:3d}{}: output:{}  expected:{}'
-                                        .format(sample_id, suffix, output_str, expected_str))
-        getLogger(__name__).warning('cost: {}'.format(np.sum(cost)))
+        outputs = perceptron.predict(attrs.items())
     else:
-        costs_learning, costs_testing = perceptron.learn_and_predict(perceptron_config['epoch'],
-                                                                     learning_attrs,
-                                                                     learning_targets,
-                                                                     test_attrs,
-                                                                     test_targets,
-                                                                     get_learning_rates(perceptron_config['learning_rates']),
-                                                                     perceptron_config['iterations_on_last_epoch'],
-                                                                     perceptron_config['critical_cost'])
-        cost = proc_costs(costs_learning, costs_testing, perceptron_config)
-        if 'y' == input('Do you want to save weight, biases and cost?[y]'):
-            getLogger(__name__).debug('saving weight, biases and cost to file')
+        perceptron.learn_and_predict(perceptron_config['epoch'],
+                                     learning_attrs,
+                                     learning_targets,
+                                     test_attrs,
+                                     test_targets,
+                                     get_learning_rates(perceptron_config['learning_rates']),
+                                     perceptron_config['iterations_on_last_epoch'])
+        if 'y' == input('Do you want to save weights, biases and metrics?[y]'):
+            getLogger(__name__).debug('saving weights, biases and metrics to file')
             with open(perceptron_config['perceptron_file'], 'wb') as perceptron_file:
                 pickle.dump(perceptron, perceptron_file)
-            with open(perceptron_config['costs_file'], 'wb') as costs_file:
-                pickle.dump(cost, costs_file)
+            with open(perceptron_config['meter_file'], 'wb') as meter_file:
+                pickle.dump(meter, meter_file)

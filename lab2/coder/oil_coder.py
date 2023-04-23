@@ -55,5 +55,5 @@ class OilCoder(Coder):
         return normalized_targets
 
     def decode_targets(self, targets):
-        return [targets[i] * self.deltas[i] + self.mins[i] if targets[i] is not None else None
+        return [[t * self.deltas[i] + self.mins[i] if t is not None else None for t in targets[i]]
                 for i in range(0, len(self.mins))]

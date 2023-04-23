@@ -19,7 +19,7 @@ class MushroomsCoder(Coder):
         return attributes
 
     def encode_targets(self, samples):
-        return [[1 if 'e' == target[0] else 0 for target in samples]]
+        return [[1 if 'p' == target[0] else 0 for target in samples]]
 
     def decode_attrs(self, attributes):
         return [self.decode_attribute(attribute) for attribute in attributes]
@@ -28,7 +28,7 @@ class MushroomsCoder(Coder):
         return chr(attribute - 1 + ord('a')) if attribute != 0 else '?'
 
     def decode_targets(self, targets):
-        return [self.decode_target(target) for target in targets]
+        return [[self.decode_target(t) for t in target] for target in targets]
 
     def decode_target(self, target):
-        return 'e' if target > 0.5 else 'p'
+        return 'p' if target > 0.5 else 'e'

@@ -1,11 +1,14 @@
-import numpy as np
 from logging import *
+
 from formater import *
 
 
 class Perceptron:
-    def __init__(self, neurons):
+    def __init__(self, neurons, meter, coder, need_to_decode):
         self.layers = len(neurons) - 1  # number of layers excluding input layer
+        self.meter = meter
+        self.coder = coder
+        self.need_to_decode = need_to_decode
         self.b = []
         self.W = []
         for i in range(0, self.layers):
@@ -29,18 +32,6 @@ class Perceptron:
             z.append(np.matmul(self.W[l], a[l]) + self.b[l])
             a.append(self.sigmoid(z[l + 1]))
         return z, a
-
-    # output - output layer results
-    def cost(self, output, y):
-        C = 0  # C - cost function
-        for i in range(0, len(y)):
-            if y[i] is not None:
-                C += (output[i] - y[i]) ** 2
-        return C
-
-    def cost_component(self, output, y):
-        return [(output[i] - y[i]) ** 2 if y[i] is not None else None for i in
-                range(0, len(y))]
 
     # z = Wa(L - 1) + b,a(L) = f(z), f - activation function, y - targets
     def back_prop(self, z, a, y):
@@ -72,29 +63,27 @@ class Perceptron:
 
     def learn(self, X, Y, learning_rate):
         i = 0
-        cost = []
         dbs = []
         dWs = []
+        result = []
         for sample_id, x in X:
             db, dW, output = self.learn_it(x, Y[sample_id], learning_rate)
-            cost.append(self.cost(output, Y[sample_id]))
             dbs.append(db)
             dWs.append(dW)
+            result.append(output)
             i += 1
 
-        return dbs, dWs, cost
+        return dbs, dWs, result
 
-    def predict(self, X, Y):
+    def predict(self, X):
         i = 0
-        cost = []
-        output = {}
+        result = {}
         for sample_id, x in X:
             _, a = self.forward_prop(x)
-            cost.append(self.cost(a[self.layers], Y[sample_id]))
             i += 1
-            output[sample_id] = a[self.layers]
+            result[sample_id] = a[self.layers]
 
-        return output, cost
+        return result
 
     def undo_learning(self, db, dW, learning_rate):
         for j in range(0, len(dW)):
@@ -105,10 +94,8 @@ class Perceptron:
     # learnings_samples, test_samples: attributes => targets
     # learning_rates: epoch => new learning rate
     def learn_and_predict(self, epoch, learning_attributes, learning_targets,
-                          test_attributes, test_targets, learning_rates, it_on_last_epoch, critical_cost):
-        self.critical_cost = critical_cost
-        costs_learning = []
-        costs_testing = []
+                          test_attributes, test_targets, learning_rates, it_on_last_epoch):
+        dbs, dWs = [], []
         for i in range(0, epoch):
             if i in learning_rates:
                 learning_rate = learning_rates[i]
@@ -121,31 +108,30 @@ class Perceptron:
             Y = {sample_id: sample for sample_id, sample in Y}
 
             # learning
-            dbs, dWs, learn_epoch_costs = self.learn(X, Y, learning_rate)
-            learn_epoch_cost = np.sum(learn_epoch_costs)
-            if len(costs_learning) > 0:
-                if self.check_stop('learning', costs_learning[-1:][0], learn_epoch_cost):
-                    self.undo_learning(dbs, dWs, learning_rate)
-                    break
-            costs_learning.append(learn_epoch_cost)
+            db, dW, result_learning = self.learn(X, Y, learning_rate)
+            dbs += db
+            dWs += dW
 
             # testing
-            _, test_epoch_costs = self.predict(list(test_attributes.items()), test_targets)
-            test_epoch_cost = np.sum(test_epoch_costs)
-            if len(costs_testing) > 0:
-                if self.check_stop('predicting', costs_testing[-1:][0], test_epoch_cost):
-                    self.undo_learning(dbs, dWs, learning_rate)
-                    break
-            costs_testing.append(test_epoch_cost)
+            result_predicting = self.predict(list(test_attributes.items()))
 
-        return costs_learning, costs_testing
+            rl = np.transpose(result_learning)
+            el = np.transpose(list(Y.values()))
+            rp = np.transpose(list(result_predicting.values()))
+            ep = np.transpose(list(test_targets.values()))
+            if self.need_to_decode:
+                rl = self.coder.decode_targets(rl)
+                el = self.coder.decode_targets(el)
+                rp = self.coder.decode_targets(rp)
+                ep = self.coder.decode_targets(ep)
 
-    def check_stop(self, action_name, previous_cost, current_cost):
-        if current_cost > previous_cost:
-            if 'y' != input('{0} cost increased, previous: {1:.3f}, current: {2:.3f}. Do you want to continue {0}[y]'
-                                    .format(action_name, previous_cost, current_cost)):
-                return True
-        return False
+            deteriorations = self.meter.count_metrics(rl, el, rp, ep)
+            if deteriorations:
+                self.undo_learning(dbs[-deteriorations:0], dWs[-deteriorations:0], learning_rate)
+                break
+
+        getLogger(__name__).info(f'learned {i} epoch')
+
 
     def log_weights_biases(self):
         getLogger(__name__).debug("weights:\n" + format_matrix_array(self.W))

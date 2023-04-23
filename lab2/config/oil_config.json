@@ -1,0 +1,41 @@
+{
+  "reader": {
+    "data_file": "data/oil.csv",
+    "start_row": 3,
+    "end_row": 187,
+    "start_attributes": 0,
+    "end_attributes": 30,
+    "start_targets": 31,
+    "end_targets": 32
+  },
+  "perceptron": {
+    "clear_weights": true,
+    "neurons": [
+      10,
+      10
+    ],
+    "only_predict": false,
+    "learning_rates": {
+      "0": 0.001
+    },
+    "perceptron_file": "pickle/oil_perceptron_10_10.pickle",
+    "meter_file": "pickle/oil_meter_10_10.pickle",
+    "epoch": 5,
+    "iterations_on_last_epoch": 0,
+    "need_to_decode": true
+  },
+  "meter": {
+    "key_metric": "R2",
+    "deteriorations_to_stop": 3
+  },
+  "diagram": {
+    "max_values": 0
+  },
+  "sorter": {
+    "clear_samples": true,
+    "training_data_per": 70,
+    "entropy_bottom_line": 40,
+    "learning_file": "pickle/oil_learning_10_10.pickle",
+    "test_file": "pickle/oil_testing_10_10.pickle"
+  }
+}

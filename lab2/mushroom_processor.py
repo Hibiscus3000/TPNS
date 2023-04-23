@@ -1,5 +1,3 @@
-import csv
-
 from main import *
 from metrics import *
 
@@ -9,10 +7,12 @@ def clear_attributes(attribute_samples, target_samples, ids, critical_correlatio
     targets = samples_to_attributes(target_samples, ids)
     categories_to_samples_attrs = []
     categories_to_samples_tars = []
-    for attribute in attributes:
-        categories_to_samples = attribute_to_categories_to_samples(attribute)
+    for i in range(0, len(attributes)):
+        categories_to_samples = attribute_to_categories_to_samples(attributes[i])
         if 0 != get_entropy(list(categories_to_sample_amount(categories_to_samples).values())):
             categories_to_samples_attrs.append(categories_to_samples)
+        else:
+            getLogger(__name__).info(f'removed attribute № {i} due to zero entropy')
     for target in targets:
         categories_to_samples_tars.append(attribute_to_categories_to_samples(target))
 
@@ -50,7 +50,7 @@ def clear_attributes(attribute_samples, target_samples, ids, critical_correlatio
     for attribute_id, need_to_remove in to_remove.items():
         if need_to_remove:
             del samples_to_categories_attr[attribute_id]
-            getLogger(__name__).info("removed attribute №{} due to high correlation with other attributes"
+            getLogger(__name__).info("removed attribute № {} due to high correlation with other attributes"
                                      .format(attribute_id))
     return samples_to_categories_attr, samples_to_categories_tar
 
@@ -69,7 +69,7 @@ def clear_samples(samples_to_categories_attr, emission_threshold):
     to_remove_samples = []
     for sample_id, number_of_emissions in emissions.items():
         if emissions[sample_id]:
-            getLogger(__name__).info(f"removing sample №{sample_id} due to emission")
+            getLogger(__name__).info(f"removing sample № {sample_id} due to emission")
             to_remove_samples.append(sample_id)
     getLogger(__name__).info("-----------------------------------------------------------------")
     getLogger(__name__).info("samples removed total: {}".format(len(to_remove_samples)))
@@ -91,7 +91,7 @@ def write_to_file(filename, samples_to_categories_attr, samples_to_categories_ta
 
 
 if __name__ == '__main__':
-    config = read_config()
+    config = read_config('mushrooms')
     is_oil, str_attrs, str_targets = read_data(config['reader'])
     if False == is_oil:
         coder, _, _, attributes, targets = code_data(str_attrs, str_targets, is_oil)

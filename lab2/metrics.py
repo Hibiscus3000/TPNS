@@ -106,7 +106,7 @@ def get_gain_ratio(categories_dependent, categories_on_which_depend):
 
 
 def get_sample_mean(attribute):
-    return average(attribute)
+    return average([at for at in attribute if at is not None])
 
 
 def get_dispersion(attribute):
