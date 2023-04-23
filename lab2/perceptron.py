@@ -4,9 +4,8 @@ from formater import *
 
 
 class Perceptron:
-    def __init__(self, neurons, meter, coder, need_to_decode):
+    def __init__(self, neurons, coder, need_to_decode):
         self.layers = len(neurons) - 1  # number of layers excluding input layer
-        self.meter = meter
         self.coder = coder
         self.need_to_decode = need_to_decode
         self.b = []
@@ -82,7 +81,6 @@ class Perceptron:
             _, a = self.forward_prop(x)
             i += 1
             result[sample_id] = a[self.layers]
-
         return result
 
     def undo_learning(self, db, dW, learning_rate):
@@ -94,9 +92,11 @@ class Perceptron:
     # learnings_samples, test_samples: attributes => targets
     # learning_rates: epoch => new learning rate
     def learn_and_predict(self, epoch, learning_attributes, learning_targets,
-                          test_attributes, test_targets, learning_rates, it_on_last_epoch):
+                          test_attributes, test_targets, learning_rates, it_on_last_epoch, meter):
         dbs, dWs = [], []
+        i = 0
         for i in range(0, epoch):
+            getLogger(__name__).info(f'epoch {i}...')
             if i in learning_rates:
                 learning_rate = learning_rates[i]
             # learning
@@ -125,9 +125,9 @@ class Perceptron:
                 rp = self.coder.decode_targets(rp)
                 ep = self.coder.decode_targets(ep)
 
-            deteriorations = self.meter.count_metrics(rl, el, rp, ep)
+            deteriorations = meter.count_metrics(rl, el, rp, ep)
             if deteriorations:
-                self.undo_learning(dbs[-deteriorations:0], dWs[-deteriorations:0], learning_rate)
+                self.undo_learning(dbs[-(deteriorations * len(X)):0], dWs[-(deteriorations * len(X)):0], learning_rate)
                 break
 
         getLogger(__name__).info(f'learned {i} epoch')

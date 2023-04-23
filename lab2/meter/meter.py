@@ -21,9 +21,16 @@ class Meter(abc.ABC):
             self.count_for_selection(result_learning[i], expected_learning[i], self.learning[i])
             self.count_for_selection(result_predicting[i], expected_predicting[i], self.predicting[i])
 
-            if self.check_stop(self.learning[i], 'learning', self.learning_deterioration, i):
-                return self.learning_deterioration[i]
+            # if self.check_stop(self.learning[i], 'learning', self.learning_deterioration, i):
+            #     return self.learning_deterioration[i]
             if self.check_stop(self.predicting[i], 'predicting', self.predicting_deterioration, i):
+                for j in range(0, self.number_of_targets):
+                    for metric_name, metric in self.learning[j].items():
+                        for k in range(0, self.predicting_deterioration[i]):
+                            del metric[len(metric) - 1]
+                    for metric_name, metric in self.predicting[j].items():
+                        for k in range(0, self.predicting_deterioration[i]):
+                            del metric[len(metric) - 1]
                 return self.predicting_deterioration[i]
 
         return 0
@@ -34,9 +41,15 @@ class Meter(abc.ABC):
 
     def log_last_metrics(self):
         getLogger(__name__).info("_____________________________LEARNING_____________________________")
-        for metrix_name, metric in self.learning.items():
-            getLogger(__name__).info(f'{metrix_name}: {metric:.2f}')
+        for i in range(0, len(self.learning)):
+            for metrix_name, metric in self.learning[i].items():
+                if len(metric) > 0:
+                    getLogger(__name__).info(f'{i}. {metrix_name}: {metric[len(metric) - 1]}')
         getLogger(__name__).info("____________________________PREDICTING____________________________")
+        for i in range(0, len(self.predicting)):
+            for metrix_name, metric in self.predicting[i].items():
+                if len(metric) > 0:
+                    getLogger(__name__).info(f'{i}. {metrix_name}: {metric[len(metric) - 1]}')
 
     @abc.abstractmethod
     def get_initial_metrics(self):
@@ -52,9 +65,10 @@ class Meter(abc.ABC):
         else:
             det_counters[target_id] = 0
         if det_counters[target_id] >= self.deterioration_to_stop:
-            if 'y' != input(f'{self.key_metric} deteriorate {det_counters[target_id]} times in a row '
-                            f'for {selection_name} selection, would you like to continue?'):
+            if 'y' != input(f'{len(key_metric)}: {self.key_metric} deteriorate {det_counters[target_id]} times in a row '
+                            f'for {target_id} target in {selection_name} selection, would you like to continue?'):
                 return True
             else:
+                det_counters[target_id] = 0
                 return False
         return False

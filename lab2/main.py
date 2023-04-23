@@ -2,11 +2,14 @@ import json
 import logging.config
 
 import pickle
+import sys
 from coder.mushrooms_coder import MushroomsCoder
 from coder.oil_coder import OilCoder
 from csv_reader import *
+from diagram_builder import *
 from meter import *
 from perceptron import *
+from qualification_metrics import *
 from sorter import *
 
 
@@ -81,7 +84,7 @@ def get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_
         neurons = perceptron_config['neurons']
         neurons.insert(0, number_of_input_neurons)  # insert input layer
         neurons.append(number_of_output_neurons)  # appending output layer
-        perceptron = Perceptron(neurons, meter, coder, perceptron_config['need_to_decode'])
+        perceptron = Perceptron(neurons, coder, perceptron_config['need_to_decode'])
     else:
         getLogger(__name__).debug("obtaining previous perceptron weight and biases")
         with open(perceptron_config['perceptron_file'], 'rb') as perceptron_file:
@@ -99,9 +102,13 @@ def get_learning_rates(learning_rates):
     return {int(epoch): learning_rate for epoch, learning_rate in learning_rates.items()}
 
 
-def get_meter(name, number_of_targets):
-    return QualificationMeter(number_of_targets) if 'mushrooms' == name \
-        else RegressionMeter(number_of_targets)
+def get_meter(perceptron_config, name, number_of_targets):
+    if perceptron_config['clear_weights']:
+        return QualificationMeter(number_of_targets) if 'mushrooms' == name \
+            else RegressionMeter(number_of_targets)
+    else:
+        with open(perceptron_config['meter_file'], 'rb') as meter_file:
+            return pickle.load(meter_file)
 
 
 if __name__ == '__main__':
@@ -114,14 +121,27 @@ if __name__ == '__main__':
     learning_targets = get_samples_by_ids(normalized_targets, learning_ids)
     test_attrs = get_samples_by_ids(normalized_attrs, test_ids)
     test_targets = get_samples_by_ids(normalized_targets, test_ids)
-    meter = get_meter(sys.argv[1], number_of_output_neurons)
     perceptron_config = config['perceptron']
+    meter = get_meter(perceptron_config, sys.argv[1], number_of_output_neurons)
     perceptron = get_perceptron(perceptron_config, number_of_input_neurons, number_of_output_neurons,
                                 meter, coder)
     if perceptron_config['only_predict']:
-        attrs = {**learning_attrs, **test_attrs}
-        targets = {**learning_targets, **test_targets}
-        outputs = perceptron.predict(attrs.items())
+        result_learning = perceptron.predict(learning_attrs.items())
+        result_predicting = perceptron.predict(test_attrs.items())
+        meter.log_last_metrics()
+        if 'oil' == sys.argv[1]:
+            show_prediction_results(learning_ids,
+                                    coder.decode_targets(np.transpose(list(result_learning.values()))),
+                                    coder.decode_targets(np.transpose(list(learning_targets.values()))),
+                                    test_ids,
+                                    coder.decode_targets(np.transpose(list(result_predicting.values()))),
+                                    coder.decode_targets(np.transpose(list(test_targets.values()))))
+        else:
+            tpr_learning, fpr_learning = roc(np.transpose(list(result_learning.values()))[0],
+                                             np.transpose(list(learning_targets.values()))[0], 101)
+            tpr_predicting, fpr_predicting = roc(np.transpose(list(result_predicting.values()))[0],
+                                                 np.transpose(list(test_targets.values()))[0], 101)
+            show_roc(tpr_learning, fpr_learning, tpr_predicting, fpr_predicting)
     else:
         perceptron.learn_and_predict(perceptron_config['epoch'],
                                      learning_attrs,
@@ -129,7 +149,10 @@ if __name__ == '__main__':
                                      test_attrs,
                                      test_targets,
                                      get_learning_rates(perceptron_config['learning_rates']),
-                                     perceptron_config['iterations_on_last_epoch'])
+                                     perceptron_config['iterations_on_last_epoch'],
+                                     meter)
+        meter.log_last_metrics()
+        show_metrics(meter.learning, meter.predicting)
         if 'y' == input('Do you want to save weights, biases and metrics?[y]'):
             getLogger(__name__).debug('saving weights, biases and metrics to file')
             with open(perceptron_config['perceptron_file'], 'wb') as perceptron_file:

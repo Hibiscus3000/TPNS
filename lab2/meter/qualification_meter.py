@@ -9,6 +9,7 @@ class QualificationMeter(Meter):
 
     def count_for_selection(self, result, expected, selection_dictionary):
         conf_matrix = confusion_matrix(result, expected)
+        selection_dictionary["confusion matrix"].append(conf_matrix)
         selection_dictionary["accuracy"].append(accuracy(conf_matrix))
         prec = precision(conf_matrix)
         if prec > 0:
@@ -22,7 +23,7 @@ class QualificationMeter(Meter):
         # selection_dictionary["AUC"].append(area_under_curve(result, expected))
 
     def get_initial_metrics(self):
-        return {"accuracy": [], "precision": [], "recall": [], "f1": [], "AUC": []}
+        return {"confusion matrix": [], "accuracy": [], "precision": [], "recall": [], "f1": []}
 
     def check_metric_worsened(self, current, previous):
         return current < previous

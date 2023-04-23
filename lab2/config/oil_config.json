@@ -9,18 +9,17 @@
     "end_targets": 32
   },
   "perceptron": {
-    "clear_weights": true,
+    "clear_weights": false,
     "neurons": [
-      10,
       10
     ],
-    "only_predict": false,
+    "only_predict": true,
     "learning_rates": {
-      "0": 0.001
+      "0": 0.01
     },
-    "perceptron_file": "pickle/oil_perceptron_10_10.pickle",
-    "meter_file": "pickle/oil_meter_10_10.pickle",
-    "epoch": 5,
+    "perceptron_file": "pickle/oil_perceptron.pickle",
+    "meter_file": "pickle/oil_meter.pickle",
+    "epoch": 20000,
     "iterations_on_last_epoch": 0,
     "need_to_decode": true
   },
@@ -28,14 +27,11 @@
     "key_metric": "R2",
     "deteriorations_to_stop": 3
   },
-  "diagram": {
-    "max_values": 0
-  },
   "sorter": {
-    "clear_samples": true,
+    "clear_samples": false,
     "training_data_per": 70,
     "entropy_bottom_line": 40,
-    "learning_file": "pickle/oil_learning_10_10.pickle",
-    "test_file": "pickle/oil_testing_10_10.pickle"
+    "learning_file": "pickle/oil_learning.pickle",
+    "test_file": "pickle/oil_testing.pickle"
   }
 }

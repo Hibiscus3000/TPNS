@@ -9,18 +9,19 @@
     "end_targets": 0
   },
   "perceptron": {
-    "clear_weights": true,
+    "clear_weights": false,
     "neurons": [
-      10,
-      10
+      13,
+      13,
+      13
     ],
-    "only_predict": false,
+    "only_predict": true,
     "learning_rates": {
-      "0": 0.001
+      "0": 0.002
     },
-    "perceptron_file": "pickle/mushrooms_perceptron_10_10.pickle",
-    "meter_file": "pickle/mushrooms_meter_10_10.pickle",
-    "epoch": 5,
+    "perceptron_file": "pickle/mushrooms_perceptron1.pickle",
+    "meter_file": "pickle/mushrooms_meter1.pickle",
+    "epoch": 0,
     "iterations_on_last_epoch": 0,
     "need_to_decode": false
   },
@@ -28,15 +29,12 @@
     "key_metric": "AUC",
     "deteriorations_to_stop": 3
   },
-  "diagram": {
-    "max_values": 0
-  },
   "sorter": {
-    "clear_samples": true,
+    "clear_samples": false,
     "training_data_per": 70,
     "entropy_bottom_line": 26,
-    "learning_file": "pickle/mushrooms_learning_10_10.pickle",
-    "test_file": "pickle/mushrooms_testing_10_10.pickle"
+    "learning_file": "pickle/mushrooms_learning.pickle",
+    "test_file": "pickle/mushrooms_testing.pickle"
   },
   "processor": {
     "output_data_file": "data/cleared_gribs.csv",

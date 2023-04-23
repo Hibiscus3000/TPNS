@@ -4,7 +4,7 @@ from regression_metrics import *
 
 class RegressionMeter(Meter):
 
-    def __init__(self, number_of_targets, key_meter='R2', rises_to_stop=3):
+    def __init__(self, number_of_targets, key_meter='R2', rises_to_stop=10):
         super().__init__(key_meter, rises_to_stop, number_of_targets)
 
     def count_for_selection(self, result, expected, selection_dictionary):

@@ -2,53 +2,57 @@ import math
 
 
 def accuracy(confusion_matrix):
-    return confusion_matrix[0] + confusion_matrix[1] / \
+    return (confusion_matrix[0] + confusion_matrix[1]) / \
         (confusion_matrix[0] + confusion_matrix[1] + confusion_matrix[2] + confusion_matrix[3])
 
 
 def confusion_matrix(result, expected, threshold=0.5):
-    # TP, TN, FP, FN
+    # TP, TN, FN, FP
     confusion_matrix = [0, 0, 0, 0]
     for i in range(0, len(result)):
         if expected[i] is None:
             continue
-        res = 1 if result[i] >= threshold else 0
+        res = 1 if (result[i] >= threshold) else 0
         if expected[i] == res:
-            truthfulness = 2
-        else:
             truthfulness = 0
+        else:
+            truthfulness = 2
         confusion_matrix[truthfulness + 1 - expected[i]] += 1
 
     return confusion_matrix
 
 
 def precision(confusion_matrix):
-    denominator = confusion_matrix[0] + confusion_matrix[1]
-    return confusion_matrix[0] / denominator if 0 != denominator else -1
-
-
-def recall(confusion_matrix):
     denominator = confusion_matrix[0] + confusion_matrix[3]
     return confusion_matrix[0] / denominator if 0 != denominator else -1
 
 
+def recall(confusion_matrix):
+    denominator = confusion_matrix[0] + confusion_matrix[2]
+    return confusion_matrix[0] / denominator if 0 != denominator else -1
+
+
 def f1(confusion_matrix):
-    denominator = (confusion_matrix[0] + 0.5 * (confusion_matrix[0] + confusion_matrix[3]))
+    denominator = (confusion_matrix[0] + 0.5 * (confusion_matrix[2] + confusion_matrix[3]))
     return confusion_matrix[0] / denominator if 0 != denominator else -1
 
 
 def false_positive_rate(confusion_matrix):
-    return confusion_matrix[2] / (confusion_matrix[2] + confusion_matrix[1])
+    denominator = confusion_matrix[1] + confusion_matrix[3]
+    return confusion_matrix[3] / denominator if 0 != denominator else -1
 
 
 def roc(result, expected, steps):
-    step = 1 / steps
+    step = 1 / (steps - 1)
     tpr = []
     fpr = []
     for i in range(0, steps):
         conf_matrix = confusion_matrix(result, expected, i * step)
-        tpr.append(recall(conf_matrix))
-        fpr.append(false_positive_rate(conf_matrix))
+        true_pr = recall(conf_matrix)
+        false_pr = false_positive_rate(conf_matrix)
+        if (true_pr >= 0) & (false_pr >= 0):
+            tpr.append(true_pr)
+            fpr.append(false_pr)
     return tpr, fpr
 
 
