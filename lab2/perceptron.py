@@ -99,6 +99,7 @@ class Perceptron:
             getLogger(__name__).info(f'epoch {i}...')
             if i in learning_rates:
                 learning_rate = learning_rates[i]
+                getLogger(__name__).info(f'learning rate: {learning_rate}')
             # learning
             X = list(learning_attributes.items())
             Y = list(learning_targets.items())
