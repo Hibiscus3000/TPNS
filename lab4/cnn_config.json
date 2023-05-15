@@ -1,0 +1,50 @@
+[
+    {
+        "type": "convolution",
+        "filters": 6,
+        "size": 5,
+        "depth" : 1,
+        "activation_function": "sigmoid",
+        "padding": 2
+    },
+    {
+        "type": "avg_pool",
+        "size": 2,
+        "depth" : 6,
+        "prev_size" : 28,
+        "stride": 2
+    },
+    {
+        "type": "convolution",
+        "filters": 16,
+        "size": 5,
+        "depth" : 6,
+        "activation_function": "sigmoid",
+        "padding": 0
+    },
+    {
+        "type": "avg_pool",
+        "size": 2,
+        "depth" : 16,
+        "prev_size" : 10,
+        "stride": 2
+    },
+    {
+        "type": "hidden",
+        "neurons": 120,
+        "previous_neurons": 400,
+        "activation_function": "sigmoid"
+    },
+    {
+        "type": "hidden",
+        "neurons": 84,
+        "previous_neurons": 120,
+        "activation_function": "sigmoid"
+    },
+    {
+        "type": "output",
+        "neurons": 10,
+        "previous_neurons": 84,
+        "activation_function": "sigmoid"
+    }
+]
