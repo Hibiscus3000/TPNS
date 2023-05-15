@@ -7,4 +7,4 @@ class Sigmoid(ActivationFunction):
         return 1 / (1 + np.exp(-z))
     
     def derivative(self, z):
-        return np.multiply(self.sigmoid(z), 1 - self.sigmoid(z))
+        return np.multiply(self.apply(z), 1 - self.apply(z))
