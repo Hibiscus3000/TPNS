@@ -1,5 +1,8 @@
 from layer.cnn.cnn_layer import *
 import numpy as np
+import scipy.signal
+
+from numpy.fft import fft2, ifft2
 
 
 class ConvolutionLayer(CNNLayer):
@@ -36,7 +39,8 @@ class ConvolutionLayer(CNNLayer):
             for j in range(0, self.image_depth):
                 dW[f][j] = self.convolve(X[j], next_d[f])
                 d[j] += self.convolve(np.rot90(np.rot90(np.pad(self.W[f][j],
-                                                        (next_d[f].shape[0] - 1, next_d[f].shape[0] - 1),
+                                                        (next_d[f].shape[0] - 1,
+                                                         next_d[f].shape[0] - 1),
                                                         constant_values=(0)))), next_d[f])
         return d, db, dW
 
@@ -47,17 +51,7 @@ class ConvolutionLayer(CNNLayer):
     # A - hxw
     # K - khxkw
     def convolve(self, A, K):
-        h, w = A.shape
-        k_size = K.shape[0]
-        k = k_size // 2
-        output_size = self.calc_output_size(A, k_size)
-        output = np.empty((output_size, output_size))
-        add = k_size % 2
-        for y in range(k, h - k + 1 - add):
-            for x in range(k, w - k + 1 - add):
-                output[y - k][x - k] = np.sum(
-                    A[y - k: y + k + add, x - k: x + k + add] * K)
-        return output
+        return scipy.signal.fftconvolve(A, K, mode = 'valid')
 
     # k_size - kernel size
     def calc_output_size(self, A, k_size):
