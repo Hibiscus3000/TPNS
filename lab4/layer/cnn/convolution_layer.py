@@ -7,36 +7,38 @@ class ConvolutionLayer(CNNLayer):
     # image_depth - number of input channels
     # filters - number_of_filters
     # p - padding
-    def __init__(self, image_depth, height, width, filters, p):
-        super().__init__(height, width)
+    def __init__(self, image_depth, size, filters, p):
+        super().__init__(size, image_depth)
         self.filters = filters
-        self.W = np.random.rand(filters, image_depth, height, width) - 0.5
+        self.W = np.random.rand(filters, image_depth, size, size) - 0.5
         self.b = np.random.rand(filters) - 0.5
         self.p = p
 
     def forward_prop(self, X):
-        output = np.zeros((self.fitters, self.height, self.width))
-        for j in range(0, self.image_depth):
-            X[j] = np.pad(X[j], (self.p, self.p), constant_values=(0))
+        X = np.pad(X, ((0, 0), (self.p, self.p), (self.p, self.p)),
+                   constant_values=(0))
+        output_size = self.calc_output_size(X, self.size)
+        output = np.zeros((self.filters, output_size, output_size))
         for f in range(0, self.filters):
             for j in range(0, self.image_depth):
                 output[f] += self.convolve(X[j], self.W[f][j])
-            output[f] += self.bias[f]
+            output[f] += self.b[f]
         return output
 
-    def back_prop(self, X, d):
-        for j in range(0, self.image_depth):
-            X[j] = np.pad(X[j], (self.p, self.p), constant_values=(0))
+    def back_prop(self, X, next_d):
+        X = np.pad(X, ((0, 0), (self.p, self.p), (self.p, self.p)),
+                   constant_values=(0))
         db = np.empty(self.filters)
         dW = np.empty(self.W.shape)
         d = np.zeros(X.shape)
         for f in range(0, self.filters):
-            db[f] = np.sum(d[f])
+            db[f] = np.sum(next_d[f])
             for j in range(0, self.image_depth):
-                dW[f][j] = self.convolve(X[j], db[f])
-                d[j] += self.convolve(np.rot90(np.rot90(np.pad(dW[f][j], (d.shape[0] - 1,d.shape[0] - 1), constant_values=(0)))), db[f])
+                dW[f][j] = self.convolve(X[j], next_d[f])
+                d[j] += self.convolve(np.rot90(np.rot90(np.pad(self.W[f][j],
+                                                        (next_d[f].shape[0] - 1, next_d[f].shape[0] - 1),
+                                                        constant_values=(0)))), next_d[f])
         return d, db, dW
-
 
     def change_weights_biases(self, learning_rate, db, dW):
         self.W -= learning_rate * dW
@@ -44,15 +46,24 @@ class ConvolutionLayer(CNNLayer):
 
     # A - hxw
     # K - khxkw
-    def convolve(self, A, K, s1, s2):
+    def convolve(self, A, K):
         h, w = A.shape
-        kh, kw = K.shape
-        k1 = kh // 2 - 1
-        k2 = kw // 2 - 1
-        output_h = (h - 2 * k1)
-        output_w = (w - 2 * k2)
-        output = np.empty((output_h, output_w))
-        for y in range(k1, h - k1):
-            for x in range(k2, w - k2):
-                output[y - k1][x - k2] = np.sum(A[y - k1: y + k1 + 1][x - k2: x + k2 + 1] * K)
+        k_size = K.shape[0]
+        k = k_size // 2
+        output_size = self.calc_output_size(A, k_size)
+        output = np.empty((output_size, output_size))
+        add = k_size % 2
+        for y in range(k, h - k + 1 - add):
+            for x in range(k, w - k + 1 - add):
+                output[y - k][x - k] = np.sum(
+                    A[y - k: y + k + add, x - k: x + k + add] * K)
         return output
+
+    # k_size - kernel size
+    def calc_output_size(self, A, k_size):
+        h, w = A.shape[-2:]
+        assert h == w
+        k = k_size // 2
+        add = k_size % 2
+        output_size = (h - 2 * k + 1 - add)
+        return output_size

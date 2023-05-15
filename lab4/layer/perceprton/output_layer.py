@@ -1,14 +1,15 @@
-from layer.perceprton.regular_layer import *
+from layer.perceprton.perceptron_layer import *
 from activation_function.activation_function import *
 import numpy as np
 
-class OutputLayer(RegularLayer):
 
-    # z - is the output of that layer, y - expected
-    def back_prop(self, z, activation_function, y):
+class OutputLayer(PerceptronLayer):
+
+    # x - is the input of that layer
+    # z - is the output of that layer
+    # y - expected result
+    def back_prop(self, x, z, activation_function, y):
         a = activation_function.apply(z)
         db = activation_function.derivative(z) * (a - y)
-        dW = self.count_dW(db, a)
-        return db, db, dW
-    
-
+        dW = self.count_dW(db, x.flatten())
+        return np.matmul(db, self.W), db, dW

@@ -4,12 +4,17 @@ import numpy as np
 class AvgPoolLayer(PollingLayer):
 
     def apply_pool(self, chnl, x, y, X):
-        assert(self.height, self.width == X.shape)
+        assert (self.size, self.size) == X.shape
         return np.average(X)
         
     def back_prop(self, next_d):
-        assert(next_d.shape == self.output.shape)
-        d = np.empty((self.prev_chnl, self.prev_height, self.prev_width))
+        d = np.zeros((self.image_depth, self.prev_size, self.prev_size))
+        next_d = next_d.reshape(self.output_size)
+        N = self.size * self.size
         for c in range(0, next_d.shape[0]):
-            d[c] = np.sum(next_d[c]) / (self.height * self.width)
+            for y in range(0, next_d.shape[1]):
+                for x in range(0, next_d.shape[2]):
+                    d_y = y * self.stride
+                    d_x = x * self.stride
+                    d[c, d_y : d_y + self.size, d_x : d_x + self.size] += next_d[c][y][x] / N
         return d, None, None
