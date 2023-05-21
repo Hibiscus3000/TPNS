@@ -57,15 +57,15 @@ if '__main__' == __name__:
             config['nn']['learning rate'], train[0], train[1])
         test_outputs = cnn.test(test[0])
 
-        train_out_dec = reader.decode_all(train_outputs)
-        train_exp_dec = reader.decode_all(train[1])
+        train_out_dec = decode_all(train_outputs)
+        train_exp_dec = decode_all(train[1])
         logging.getLogger().debug('TRAIN')
         for j in range(0, len(train_out_dec)):
             output = ["{:.2f}".format(train_output) for train_output in train_outputs[j]]
             logging.getLogger().debug(f'{train_exp_dec[j]} - {output}')
 
-        test_out_dec = reader.decode_all(test_outputs)
-        test_exp_dec = reader.decode_all(test[1])
+        test_out_dec = decode_all(test_outputs)
+        test_exp_dec = decode_all(test[1])
         logging.getLogger().debug('TEST')
         for j in range(0, len(test_out_dec)):
             output = ["{:.2f}".format(test_output) for test_output in test_outputs[j]]
@@ -85,41 +85,43 @@ if '__main__' == __name__:
         with open(config['nn']['backup'], 'wb') as backup_file:
                 pickle.dump(cnn, backup_file)
 
-    train_outputs = cnn.test(train[0])
-    test_outputs = cnn.test(test[0])
-    logging.getLogger(__name__).info('METRICS')
-    decoded_output_train = reader.decode_all(train_outputs)
-    decoded_output_test = reader.decode_all(test_outputs)
-    decoded_expected_train = reader.decode_all(train[1])
-    decoded_expected_test = reader.decode_all(test[1])
 
-    train_accuracy = accuracy(decoded_output_train, decoded_expected_train)
-    test_accuracy = accuracy(decoded_output_test, decoded_expected_test)
-    logging.getLogger(__name__).info('ACCURACY')
-    logging.getLogger(__name__).info(f'test: {test_accuracy}, train: {train_accuracy}')
+    if 'y' == input('do you want to count metrics?[y]'):
+        train_outputs = cnn.test(train[0])
+        test_outputs = cnn.test(test[0])
+        logging.getLogger(__name__).info('METRICS')
+        decoded_output_train = decode_all(train_outputs)
+        decoded_output_test = decode_all(test_outputs)
+        decoded_expected_train = decode_all(train[1])
+        decoded_expected_test = decode_all(test[1])
 
-    cms_train = confusion_matrix_all(
-        decoded_output_train, decoded_expected_train)
-    cms_test = confusion_matrix_all(decoded_output_test, decoded_expected_test)
-    log_metric(cms_train, cms_test, 'CONFUSION MATRIX [TP, TN, FN, FP]')
+        train_accuracy = accuracy(decoded_output_train, decoded_expected_train)
+        test_accuracy = accuracy(decoded_output_test, decoded_expected_test)
+        logging.getLogger(__name__).info('ACCURACY')
+        logging.getLogger(__name__).info(f'test: {test_accuracy}, train: {train_accuracy}')
 
-    recalls_train = metric_all(cms_train, recall)
-    recalls_test = metric_all(cms_test, recall)
-    log_metric(recalls_train, recalls_test, 'RECALL')
+        cms_train = confusion_matrix_all(
+            decoded_output_train, decoded_expected_train)
+        cms_test = confusion_matrix_all(decoded_output_test, decoded_expected_test)
+        log_metric(cms_train, cms_test, 'CONFUSION MATRIX [TP, TN, FN, FP]')
 
-    precisions_train = metric_all(cms_train, precision)
-    precisions_test = metric_all(cms_test, precision)
-    log_metric(precisions_train, precisions_test, 'PRECISION')
+        recalls_train = metric_all(cms_train, recall)
+        recalls_test = metric_all(cms_test, recall)
+        log_metric(recalls_train, recalls_test, 'RECALL')
 
-    f1_train = metric_all(cms_train, f1)
-    f1_test = metric_all(cms_test, f1)
-    log_metric(f1_train, f1_test, 'F1')
+        precisions_train = metric_all(cms_train, precision)
+        precisions_test = metric_all(cms_test, precision)
+        log_metric(precisions_train, precisions_test, 'PRECISION')
 
-    rocs_train = roc_all(np.array(train_outputs), decoded_expected_train)
-    rocs_test = roc_all(np.array(test_outputs), decoded_expected_test)
-    show_roc(rocs_train, rocs_test)
+        f1_train = metric_all(cms_train, f1)
+        f1_test = metric_all(cms_test, f1)
+        log_metric(f1_train, f1_test, 'F1')
 
-    if config['nn']['epoch']:
-        if 'y' == input('Do you want to save nn?[y]'):
-            with open(config['nn']['file'], 'wb') as nn_file:
-                pickle.dump(cnn, nn_file)
+        rocs_train = roc_all(np.array(train_outputs), decoded_expected_train)
+        rocs_test = roc_all(np.array(test_outputs), decoded_expected_test)
+        show_roc(rocs_train, rocs_test)
+
+        if config['nn']['epoch']:
+            if 'y' == input('Do you want to save nn?[y]'):
+                with open(config['nn']['file'], 'wb') as nn_file:
+                    pickle.dump(cnn, nn_file)

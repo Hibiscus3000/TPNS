@@ -1,6 +1,8 @@
 import abc
 
-class CNNLayer(abc.ABC):
+from layer.perceprton import *
+
+class CNNLayer(Layer):
 
     # height, width - size of the kernel; s1, s2 - strides
     def __init__(self, size, image_depth):

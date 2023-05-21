@@ -8,5 +8,5 @@ class Layer(abc.ABC):
         pass
 
     @abc.abstractclassmethod
-    def change_weigths_biases(self, learning_rate, db, dW):
+    def change_weights_biases(self, learning_rate, db, dW):
         pass

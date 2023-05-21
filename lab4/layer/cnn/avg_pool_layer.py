@@ -1,10 +1,11 @@
 from layer.cnn.pooling_layer import *
+
 import numpy as np
 
 class AvgPoolLayer(PollingLayer):
 
     def apply_pool(self, chnl, x, y, X):
-        assert (self.size, self.size) == X.shape
+        # assert (self.size, self.size) == X.shape
         return np.average(X)
         
     def back_prop(self, next_d):
