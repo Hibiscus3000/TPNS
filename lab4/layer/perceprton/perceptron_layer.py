@@ -5,8 +5,8 @@ from layer.layer import *
 class PerceptronLayer(Layer):
 
     def __init__(self, number_of_neurons, number_of_neurons_prev_layer):
-        self.W = (np.random.rand(number_of_neurons, number_of_neurons_prev_layer) - 0.5) / 5
-        self.b = (np.random.rand(number_of_neurons) - 0.5) / 5
+        self.W = np.random.rand(number_of_neurons, number_of_neurons_prev_layer) - 0.5
+        self.b = np.random.rand(number_of_neurons) - 0.5
 
     def forward_prop(self, x):
         x = x.flatten()

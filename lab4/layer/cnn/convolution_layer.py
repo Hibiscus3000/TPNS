@@ -14,10 +14,9 @@ class ConvolutionLayer(CNNLayer):
     def __init__(self, image_depth, size, filters, p):
         super().__init__(size, image_depth)
         self.filters = filters
-        self.W = tuple([tuple([(np.random.rand(size, size) - 0.5) / 5
+        self.W = tuple([tuple([np.random.rand(size, size) - 0.5
                        for i in range(0, image_depth)]) for j in range(0, filters)])
-        self.b = tuple([(random.random() - 0.5) /
-                       5 for f in range(0, filters)])
+        self.b = tuple([random.random() - 0.5 for f in range(0, filters)])
         self.p = p
 
     def forward_prop(self, X):
