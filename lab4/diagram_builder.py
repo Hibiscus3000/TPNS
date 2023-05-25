@@ -1,7 +1,7 @@
 import matplotlib
 import matplotlib.pyplot as plt
 
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 
 
 def show_roc(rocs_training, rocs_testing):
@@ -19,3 +19,12 @@ def add_roc_one_selection(axes, rocs, name):
     axes.set_xlabel('FPR')
     axes.set_ylabel('TPR')
     axes.legend()
+
+def show_one_roc(rocs, name):
+    for i in range(0, len(rocs)):
+        plt.plot(rocs[i][1], rocs[i][0], label=str(i))
+    plt.title('ROC ' + name)
+    plt.xlabel('FPR')
+    plt.ylabel('TPR')
+    plt.legend()
+    plt.show()

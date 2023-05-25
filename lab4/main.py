@@ -121,7 +121,7 @@ if '__main__' == __name__:
         rocs_test = roc_all(np.array(test_outputs), decoded_expected_test)
         show_roc(rocs_train, rocs_test)
 
-        if config['nn']['epoch']:
-            if 'y' == input('Do you want to save nn?[y]'):
-                with open(config['nn']['file'], 'wb') as nn_file:
-                    pickle.dump(cnn, nn_file)
+    if config['nn']['epoch']:
+        if 'y' == input('Do you want to save nn?[y]'):
+            with open(config['nn']['file'], 'wb') as nn_file:
+                pickle.dump(cnn, nn_file)

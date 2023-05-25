@@ -1,15 +1,15 @@
 {
     "nn":
     {
-        "clear": true,
+        "clear": false,
         "file": "pickle/nn.pickle",
         "backup": "pickle/nn_backup.pickle",
-        "epoch": 2,
-        "learning rate": 0.005
+        "epoch": 3,
+        "learning rate": 0.02
     },
     "reader":
     {
-        "clear": true,
+        "clear": false,
         "file" : "pickle/reader.pickle",
         "train" : 60000,
         "test" : 10000
