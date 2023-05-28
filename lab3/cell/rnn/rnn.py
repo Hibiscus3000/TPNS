@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import logging
 
 from cell.cell import *
 from activation_function import *
@@ -26,28 +27,31 @@ class RNN(Cell):
         self.tanh = Tanh()
         self.sigmoid = Sigmoid()
 
-    def train_all(self, X, Y):
+    def train_all(self, learning_rate, X, Y):
         epoch = len(X) // self.window_size
         output = []
-        for e in range(0,epoch):
+        X = np.transpose(X)
+        for e in range(0, epoch):
+            logging.getLogger(__name__).debug(f'TRAIN EPOCH {e} / {epoch}')
             start = e * self.window_size
             end = (e + 1) * self.window_size
-            output.append(self.train(X[start: end], Y[start]))
+            output.append(self.train(X[:, start:end], Y[start], learning_rate))
 
     def test_all(self, X):
         epoch = len(X) // self.window_size
         output = []
+        X = np.transpose(X)
         for e in range(0, epoch):
+            logging.getLogger(__name__).debug(f'TEST EPOCH {e} / {epoch}')
             start = e * self.window_size
             end = (e + 1) * self.window_size
-            output.append(self.test(X[start: end]))
+            output.append(self.test(X[:, start:end]))
         return output
 
-
-    def train(self, x, y):
+    def train(self, x, y, learning_rate):
         self.forward_prop(x)
         dbo, dWho, dbh, dWhh, dWhx = self.back_prop(y)
-        self.change_weights_biases(dbo, dWho, dbh, dWhh, dWhx)
+        self.change_weights_biases(learning_rate, dbo, dWho, dbh, dWhh, dWhx)
         return self.output
 
     def test(self, x):
@@ -60,11 +64,15 @@ class RNN(Cell):
         self.H = [h]
         # output
         self.Z = []
-        for x in X:
-            z = np.matmul(self.Whh, h) + np.matmul(self.Whx, x.reshape(self.input_length, 1)) + self.bh
+        for i in range(0, X.shape[1]):
+            z = np.matmul(self.Whh, h) + np.matmul(self.Whx,
+                                                   X[:, i].reshape((self.input_length, 1))) + self.bh
             self.Z.append(z)
             h = self.tanh.apply(z)
             self.H.append(h)
+
+        self.Z = self.Z
+        self.H = self.H
 
         self.v = np.matmul(self.Who, h) + self.bo
         self.output = self.sigmoid.apply(self.v)
@@ -74,9 +82,12 @@ class RNN(Cell):
         last_cell = len(self.Z) - 1
         dbo = (self.output - y) * self.sigmoid.derivative(self.v)
         dWho = np.matmul(dbo, np.transpose(self.H[last_cell]))
-        dboWhofz_last = np.matmul(np.transpose(np.matmul(self.Who, self.Z[last_cell])),dbo)
+        dboWhofz_last = np.matmul(np.transpose(
+            np.matmul(self.Who, self.Z[last_cell])), dbo)
         dz = self.dzdz()
+        self.H = np.array(self.H).reshape(self.l, self.window_size + 1)[:,1:]
         dbh = dboWhofz_last * self.dzdbh(dz)
+        dbh = dbh.reshape(self.l,1)
         dWhh = dboWhofz_last * self.dzdWhh(dz)
         dWhx = dboWhofz_last * self.dzdWhx(dz)
         return dbo, dWho, dbh, dWhh, dWhx
@@ -95,20 +106,21 @@ class RNN(Cell):
     def dzdz_req(self, grad):
         if grad.shape[1] == len(self.Z):
             return grad
-        grad = np.concatenate((grad, np.matmul(self.Whh, self.Z[len(grad) - 1])))
+        grad = np.concatenate(
+            (grad, np.matmul(self.Whh, self.Z[grad.shape[1] - 1])), axis=1)
         return self.dzdz_req(grad)
 
     # dz[n - 1]/dbh where n - is the number of cells
     # dz - dzdz() result
     def dzdbh(self, dz):
-        return np.sum(dz, axis=0)
-    
+        return np.sum(dz, axis=1)
+
     # dz[n - 1]/dWhh where n - is the number of cells
     # dz - dzdz() result
     def dzdWhh(self, dz):
-        dzsdWhh = [self.H[len(dz) - k] * dz[k] for k in range(0, len(dz))]
-        return np.sum(dzsdWhh, axis=0)
-    
+        dzsdWhh = np.matmul(np.flip(self.H, axis=1), np.transpose(dz))
+        return np.sum(dzsdWhh, axis=1)
+
     def dzdWhx(self, dz):
-        dzsdWhx = [self.X[len(dz) - k + 1] * dz[k] for k in range(0, len(dz))]
-        return np.sum(dzsdWhx, axis=0)
+        dzsdWhx = np.matmul(np.flip(self.X, axis=1), np.transpose(dz))
+        return np.sum(dzsdWhx, axis=1)
