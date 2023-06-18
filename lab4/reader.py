@@ -68,19 +68,30 @@ class Reader:
             Y.append(to_one_coding(y0))
         return np.array(X), np.array(Y).astype(int)
 
-
 def to_one_coding(y0):
     y = np.zeros(10)
     y[y0] = 1
     return y
 
-
 def decode(y):
     return np.argmax(y)
-
 
 def decode_all(Y):
     Y0 = []
     for y in Y:
         Y0.append(decode(y))
     return np.array(Y0)
+
+def get_random_sample(filename, n):
+    s = 2
+    skip = sorted(random.sample(range(n),n-s))
+    df = pd.read_csv(filename, skiprows=skip)
+    array = df.to_numpy()
+    number = array[:,1:].reshape(1,28,28).astype(int)
+    return 255 - number
+
+def get_random_train():
+    return get_random_sample('data/mnist_train.csv', 60000)
+
+def get_random_test():
+    return get_random_sample('data/mnist_test.csv', 10000)
