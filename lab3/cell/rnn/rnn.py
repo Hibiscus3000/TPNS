@@ -13,17 +13,17 @@ class RNN(Cell):
         with open('cell/rnn/rnn.json', 'r') as config_file:
             self.config = json.load(config_file)
         self.input_length = self.config['input_length']
-        targets = self.config['targets']
+        self.targets = self.config['targets']
         self.l = self.config['l']
         # weights of previous nn value
-        self.Whh = np.random.rand(self.l, self.l)
+        self.Whh = np.random.rand(self.l, self.l) - 0.5
         # weights of current input value
-        self.Whx = np.random.rand(self.l, self.input_length)
+        self.Whx = np.random.rand(self.l, self.input_length) - 0.5
         # weights of output value
-        self.Who = np.random.rand(targets, self.l)
+        self.Who = np.random.rand(self.targets, self.l) - 0.5
         # bias of previos and input value
-        self.bh = np.random.rand(self.l, 1)
-        self.bo = np.random.rand(targets, 1)
+        self.bh = np.random.rand(self.l, 1) - 0.5
+        self.bo = np.random.rand(self.targets, 1) - 0.5
         self.tanh = Tanh()
         self.sigmoid = Sigmoid()
 
@@ -31,13 +31,15 @@ class RNN(Cell):
         epoch = len(X) // self.window_size
         output = []
         X = np.transpose(X)
+        Y = np.transpose(Y)
         for e in range(0, epoch):
-            logging.getLogger(__name__).debug(f'TRAIN EPOCH {e} / {epoch}')
+            logging.getLogger(__name__).debug(f'TRAIN EPOCH {e + 1} / {epoch}')
             start = e * self.window_size
             end = (e + 1) * self.window_size
-            output.append(self.train(X[:, start:end], Y[start], learning_rate))
+            output.append(self.train(X[:, start:end], Y[:, start:end], learning_rate))
+        return np.transpose(np.array(output).reshape(Y.shape))
 
-    def test_all(self, X):
+    def test_all(self, X, output_shape):
         epoch = len(X) // self.window_size
         output = []
         X = np.transpose(X)
@@ -46,81 +48,67 @@ class RNN(Cell):
             start = e * self.window_size
             end = (e + 1) * self.window_size
             output.append(self.test(X[:, start:end]))
-        return output
+        return np.transpose(np.array(output).reshape(output_shape))
 
     def train(self, x, y, learning_rate):
         self.forward_prop(x)
         dbo, dWho, dbh, dWhh, dWhx = self.back_prop(y)
         self.change_weights_biases(learning_rate, dbo, dWho, dbh, dWhh, dWhx)
-        return self.output
+        return self.O
 
     def test(self, x):
         return self.forward_prop(x)
 
     def forward_prop(self, X):
-        # previous nn value
-        h = np.zeros((self.l, 1))
+        # input
         self.X = X
-        self.H = [h]
-        # output
+        # memory
         self.Z = []
+        # h = tanh(z)
+        h = np.zeros((self.l, 1))
+        self.H = [h]
+        # output 
+        self.V = []
+        # o = sigmoid(v)
+        self.O = []
+
         for i in range(0, X.shape[1]):
             z = np.matmul(self.Whh, h) + np.matmul(self.Whx,
                                                    X[:, i].reshape((self.input_length, 1))) + self.bh
             self.Z.append(z)
+
             h = self.tanh.apply(z)
             self.H.append(h)
 
-        self.Z = self.Z
-        self.H = self.H
+            v = np.matmul(self.Who, h) + self.bo
+            self.V.append(v)
 
-        self.v = np.matmul(self.Who, h) + self.bo
-        self.output = self.sigmoid.apply(self.v)
-        return self.output
+            o = self.sigmoid.apply(v)
+            self.O.append(o)
 
-    def back_prop(self, y):
-        last_cell = len(self.Z) - 1
-        dbo = (self.output - y) * self.sigmoid.derivative(self.v)
-        dWho = np.matmul(dbo, np.transpose(self.H[last_cell]))
-        dboWhofz_last = np.matmul(np.transpose(
-            np.matmul(self.Who, self.Z[last_cell])), dbo)
-        dz = self.dzdz()
-        self.H = np.array(self.H).reshape(self.l, self.window_size + 1)[:,1:]
-        dbh = dboWhofz_last * self.dzdbh(dz)
-        dbh = dbh.reshape(self.l,1)
-        dWhh = dboWhofz_last * self.dzdWhh(dz)
-        dWhx = dboWhofz_last * self.dzdWhx(dz)
+        return self.O
+
+    def back_prop(self, Y):
+        dWhx, dWhh, dWho = np.zeros_like(self.Whx), np.zeros_like(self.Whh), np.zeros_like(self.Who)
+        dbh, dbo = np.zeros_like(self.bh), np.zeros_like(self.bo)
+        dh_prev = np.zeros_like(self.H[0])
+        for t in range(0, len(self.X)):
+            do = (self.O[t] - Y[:, t].reshape((self.targets, 1))) * self.sigmoid.derivative(self.V[t])
+            dWho += np.matmul(do, np.transpose(self.H[t]))
+            dbo += do
+            dh = np.dot(np.transpose(self.Who), do) + dh_prev
+            # dC/dz[t] (C - cost function)
+            dCdz = self.tanh.derivative(self.Z[t]) * dh
+            dbh += dCdz
+            dWhx += np.matmul(dCdz, np.transpose(self.X[:, t].reshape((self.input_length, 1))))
+            dWhh += np.matmul(dCdz, np.transpose(self.H[t - 1]))
+            dh_prev = np.matmul(np.transpose(self.Whh), dCdz)
+
         return dbo, dWho, dbh, dWhh, dWhx
 
     def change_weights_biases(self, learning_rate, dbo, dWho, dbh, dWhh, dWhx):
         self.bo -= learning_rate * dbo
         self.Who -= learning_rate * dWho
         self.bh -= learning_rate * dbh
-        self.dWhh -= learning_rate * dWhh
-        self.dWhx -= learning_rate * dWhx
-
-    def dzdz(self):
-        return self.dzdz_req(np.ones((self.l, 1)))
-
-    # list of dz[n - 1]/dz[j] where n - is the number of cells, j = 0,...,n-1
-    def dzdz_req(self, grad):
-        if grad.shape[1] == len(self.Z):
-            return grad
-        grad = np.concatenate(
-            (grad, np.matmul(self.Whh, self.Z[grad.shape[1] - 1])), axis=1)
-        return self.dzdz_req(grad)
-
-    # dz[n - 1]/dbh where n - is the number of cells
-    # dz - dzdz() result
-    def dzdbh(self, dz):
-        return np.sum(dz, axis=1)
-
-    # dz[n - 1]/dWhh where n - is the number of cells
-    # dz - dzdz() result
-    def dzdWhh(self, dz):
-        dzsdWhh = np.matmul(np.flip(self.H, axis=1), np.transpose(dz))
-        return np.sum(dzsdWhh, axis=1)
-
-    def dzdWhx(self, dz):
-        dzsdWhx = np.matmul(np.flip(self.X, axis=1), np.transpose(dz))
-        return np.sum(dzsdWhx, axis=1)
+        self.Whh -= learning_rate * dWhh
+        self.Whx -= learning_rate * dWhx
