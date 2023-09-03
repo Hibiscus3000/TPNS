@@ -4,7 +4,7 @@
         "clear": false,
         "file": "pickle/nn.pickle",
         "backup": "pickle/nn_backup.pickle",
-        "epoch": 3,
+        "epoch": 0,
         "learning rate": 0.02
     },
     "reader":

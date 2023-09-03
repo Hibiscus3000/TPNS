@@ -30,18 +30,11 @@ def choose_result_frame():
     result_displayer.grid(row=1, column=0, columnspan=3)
     result_displayer.show_result(result)
 
-def start_drawing(event):
-    global start_x
-    global start_y
-
-    start_x = event.x
-    start_y = event.y
-
 def draw_line(event):
-    if (start_x is not None) & (start_y is not None):
-        canvas.create_line(start_x, start_y, event.x, event.y, width=line_width, smoth='true')
-        image_draw.line([start_x, start_y, event.x, event.y], 0, width=line_width)
-    start_drawing(event)
+    x1, y1 = (event.x - line_width), (event.y - line_width) 
+    x2, y2 = (event.x + line_width), (event.y + line_width) 
+    canvas.create_oval(x1, y1, x2, y2, fill='black', width=0)
+    image_draw.ellipse((x1, y1, x2, y2), fill=0, width=0)
 
 def submit():
     if result_displayer is not None:
@@ -127,7 +120,7 @@ start_y = None
 
 input_side = 28
 side = 280
-line_width = 15
+line_width = 5
 
 image = PIL.Image.new("L", (side, side), 255)
 photo_image = None
@@ -135,7 +128,6 @@ image_draw = PIL.ImageDraw.Draw(image)
 
 canvas = Canvas(window, bg='white', width=side, height=side)
 canvas.grid(row=1, column=len(result_displayers), columnspan=2)
-canvas.bind('<Button-1>', start_drawing)
 canvas.bind('<B1-Motion>', draw_line)
 
 Button(window, text='submit', font=(font_family,14), command=submit)\
